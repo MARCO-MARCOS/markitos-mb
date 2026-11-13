@@ -258,7 +258,7 @@ function modal(){
   }
   if(view==='done'){
     const o=lastOrder;
-    return `<div class="ov c"><div class="dr" style="height:auto;max-height:94vh;max-width:440px;text-align:center;border:1px solid var(--line)"><h2 style="margin:0">Gracias por tu pedido</h2><p style="color:var(--mut);margin:0">Se abrió WhatsApp con tu nota lista. Solo presiona <b>Enviar</b> para que la recibamos. Si no se abrió, usa el botón.</p>${o?notaHtml(o):''}<button class="btn" data-a="sendwa">Enviar pedido por WhatsApp</button><button class="btn o" data-a="sharenota">Compartir nota como imagen</button><button class="btn o" data-a="printnota">Imprimir nota</button><button class="btn o" data-a="close">Volver a la tienda</button></div></div>`;
+    return `<div class="ov c"><div class="dr" style="height:auto;max-height:94vh;max-width:440px;text-align:center;border:1px solid var(--line)"><h2 style="margin:0">Gracias por tu pedido</h2><p style="color:var(--mut);margin:0">Tu pedido ya fue registrado. Se abrió WhatsApp con tu nota: presiona <b>Enviar</b> para confirmarlo más rápido. Si no se abrió, usa el botón.</p>${o?notaHtml(o):''}<button class="btn" data-a="sendwa">Enviar pedido por WhatsApp</button><button class="btn o" data-a="sharenota">Compartir nota como imagen</button><button class="btn o" data-a="printnota">Imprimir nota</button><button class="btn o" data-a="close">Volver a la tienda</button></div></div>`;
   }
   if(view&&view.startsWith('p:')){
     const p=prod(view.slice(2));
@@ -276,6 +276,7 @@ async function confirmOrder(){
   lastOrder={...order,list:its.map(i=>({q:i.q,n:i.p.n,t:i.p.p*i.q}))};notaBlob=null;
   done=notaText(lastOrder);
   makeNota(lastOrder).then(b=>{notaBlob=b}).catch(()=>{});
+  try{fetch('/api/pedido',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:done}),keepalive:true}).catch(()=>{})}catch(e){}
   openWA(done);
   try{await FB.addOrder(order)}catch(e){}
   cart={};save();view='done';render();

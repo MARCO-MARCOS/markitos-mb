@@ -99,7 +99,6 @@ const money=n=>'$'+Number(n||0).toLocaleString('es-MX',{minimumFractionDigits:2}
 let D=JSON.parse($('#data').textContent),cart={},cat='Todo',view=null,pay='transfer',done=null,
     admin=location.hash==='#admin',tab='prods',edit=null,orders=[];
 try{cart=JSON.parse(localStorage.getItem('mmb-cart')||'{}')}catch(e){}
-fixCats();
 const save=()=>{try{localStorage.setItem('mmb-cart',JSON.stringify(cart))}catch(e){}};
 const prod=id=>D.products.find(p=>p.id===id);
 const items=()=>Object.keys(cart).map(id=>({p:prod(id),q:cart[id]})).filter(i=>i.p&&!i.p.so);
@@ -108,6 +107,7 @@ const count=()=>items().reduce((s,i)=>s+i.q,0);
 const waNum=()=>(D.cfg.wa||['5256','1238','6817'].join('')).replace(/\D/g,'');
 const openWA=t=>{const w=window.open('https://wa.me/'+waNum()+(t?'?text='+encodeURIComponent(t):''),'_blank');if(w)w.opener=null};
 const fixCats=()=>{if(!Array.isArray(D.cfg.cats))D.cfg.cats=[];if(!D.cfg.cats.includes('Calzado')){const i=D.cfg.cats.indexOf('Ropa');D.cfg.cats.splice(i+1,0,'Calzado')}};
+fixCats();
 function toast(t){const e=document.createElement('div');e.className='toast';e.textContent=t;document.body.appendChild(e);setTimeout(()=>e.remove(),2600)}
 
 function renderMedia(src, type, autoplay=true){

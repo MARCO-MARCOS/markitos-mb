@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>MARKITOS MB</title>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Montserrat:wght@300;400;500&family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#0a0a0a;--bg2:#121212;--ink:#ffffff;--mut:#a0a0a0;--line:#222222;--gold:#C5A059;--foot:#050505;--fi:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 html{scroll-padding-top:env(safe-area-inset-top,0px);color-scheme:dark}
@@ -79,13 +79,6 @@ footer .logo{color:#fff;margin-bottom:24px}
 .com{border-bottom:1px solid var(--line);padding:16px 0}
 .x{position:absolute;top:16px;right:20px;background:none;border:0;font-size:28px;color:var(--mut);cursor:pointer}.x:hover{color:#fff}
 
-.nota{background:#0d0d0d;border:1px solid var(--gold);padding:28px 22px;text-align:left;position:relative}
-.nota:before{content:'';position:absolute;inset:5px;border:1px solid rgba(197,160,89,.3);pointer-events:none}
-.nota .k{font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);margin-bottom:6px}
-.nota .r{display:flex;justify-content:space-between;gap:14px;font-size:13px;padding:3px 0}
-.nota .r span{color:var(--mut)}.nota .r b{font-weight:400;text-align:right;word-break:break-word}
-.nota hr{border:0;border-top:1px solid var(--line);margin:14px 0}
-.nota .tot span{color:var(--gold);letter-spacing:.25em;font-size:12px}.nota .tot b{font:600 24px 'Cormorant Garamond',serif;color:var(--gold)}
 </style>
 </head>
 <body>
@@ -127,35 +120,76 @@ const notaText=o=>{const L='━━━━━━━━━━━━━━━━━�
   '👤 *CLIENTE*','Nombre: '+o.name,'Teléfono: '+o.phone,'Entrega: '+o.address,'Notas: '+(o.notes||'—'),'',
   '🛍️ *PEDIDO*',...o.list.map(i=>'• '+i.q+' × '+i.n+' — '+money(i.t)),'',
   '💰 *TOTAL: '+money(o.total)+'*','💳 *Pago:* '+payTxt(o),L,'Gracias por tu preferencia ✦'].join('\n')};
-const notaHtml=o=>`<div class="nota"><div class="serif" style="text-align:center;font-size:26px;letter-spacing:.3em;padding-left:.3em">MARKITOS <span style="color:var(--gold)">MB</span></div><div class="k" style="text-align:center;margin:4px 0 16px">Nota de pedido</div>
-<div class="r"><span>Folio</span><b>${folioOf(o)}</b></div><div class="r"><span>Fecha</span><b>${esc(fmtDate(o))}</b></div><div class="r"><span>Hora</span><b>${esc(fmtTime(o))}</b></div><hr>
-<div class="k">Cliente</div><div class="r"><span>Nombre</span><b>${esc(o.name)}</b></div><div class="r"><span>Teléfono</span><b>${esc(o.phone)}</b></div><div class="r"><span>Entrega</span><b>${esc(o.address)}</b></div>${o.notes?`<div class="r"><span>Notas</span><b>${esc(o.notes)}</b></div>`:''}<hr>
-<div class="k">Pedido</div>${o.list.map(i=>`<div class="r"><span style="color:var(--ink)">${i.q} × ${esc(i.n)}</span><b>${money(i.t)}</b></div>`).join('')}<hr>
-<div class="r tot"><span>TOTAL</span><b>${money(o.total)}</b></div><div class="r"><span>Pago</span><b>${payTxt(o)}</b></div></div>`;
+const NOTA_CSS=`
+.np{background:#fff;color:#1b2a4a;font:400 13px/1.35 Arial,Helvetica,sans-serif;border:1px solid #cfd6dd;padding:18px 18px 16px;text-align:left;box-shadow:0 2px 14px rgba(0,0,0,.35);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.np *{box-sizing:border-box}
+.np .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.np .ti{font:600 32px/1 'Dancing Script','Brush Script MT',cursive;color:#1d4e9e}
+.np .sub{font-size:9px;letter-spacing:.3em;color:#1d4e9e;margin-top:5px}
+.np .fo{color:#d0021b;font:700 20px/1 'Courier New',monospace;text-align:right;white-space:nowrap}
+.np .fo small{display:block;font:400 8px Arial;color:#1d4e9e;letter-spacing:.25em;margin-bottom:3px}
+.np .chk{display:flex;gap:18px;margin:12px 0 8px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#1d4e9e}
+.np .chk i{display:inline-block;width:13px;height:13px;border:1.5px solid #1d4e9e;margin-right:6px;vertical-align:-3px;text-align:center;font:700 11px/10px Arial;font-style:normal}
+.np .box{border:1.5px solid #1d4e9e}
+.np .box>*+*{border-top:1.5px solid #1d4e9e}
+.np .g2{display:grid;grid-template-columns:1fr 1fr}
+.np .g2>*+*{border-left:1.5px solid #1d4e9e}
+.np .c{padding:3px 8px 5px;min-height:36px;word-break:break-word;font-size:13px}
+.np .c label{display:block;font-size:8px;letter-spacing:.22em;text-transform:uppercase;color:#1d4e9e;margin-bottom:1px}
+.np table{width:100%;border-collapse:collapse;border:1.5px solid #1d4e9e;margin-top:10px}
+.np th{font:600 8px Arial;letter-spacing:.22em;color:#1d4e9e;text-transform:uppercase;padding:5px 6px;border-bottom:1.5px solid #1d4e9e;border-left:1.5px solid #1d4e9e}
+.np td{padding:5px 6px;height:28px;border-bottom:1px solid #b9dcd2;border-left:1.5px solid #1d4e9e;vertical-align:top}
+.np th:first-child,.np td:first-child{border-left:0;width:42px;text-align:center}
+.np th:last-child,.np td:last-child{width:98px;text-align:right;white-space:nowrap}
+.np .tt{display:flex;justify-content:flex-end;margin-top:10px}
+.np .tt div{border:1.5px solid #1d4e9e;padding:6px 12px;min-width:200px;display:flex;justify-content:space-between;gap:14px;align-items:baseline}
+.np .tt span{font:600 9px Arial;letter-spacing:.25em;color:#1d4e9e}.np .tt b{font-size:17px}
+.np .gr{text-align:center;font:600 18px 'Dancing Script',cursive;color:#1d4e9e;margin-top:12px}`;
+document.head.appendChild(Object.assign(document.createElement('style'),{textContent:NOTA_CSS}));
+const notaHtml=o=>`<div class="np"><div class="top"><div><div class="ti">Nota de Pedido</div><div class="sub">MARKITOS MB</div></div><div class="fo"><small>FOLIO</small>${folioOf(o)}</div></div>
+<div class="chk"><span><i>${o.pay==='cash'?'✓':''}</i>Efectivo</span><span><i>${o.pay==='transfer'?'✓':''}</i>Transferencia</span></div>
+<div class="box"><div class="g2"><div class="c"><label>Fecha</label>${esc(fmtDate(o))}</div><div class="c"><label>Hora</label>${esc(fmtTime(o))}</div></div>
+<div class="g2"><div class="c"><label>Cliente</label>${esc(o.name)}</div><div class="c"><label>Teléfono</label>${esc(o.phone)}</div></div>
+<div class="c"><label>Dirección de entrega</label>${esc(o.address)}</div>${o.notes?`<div class="c"><label>Notas</label>${esc(o.notes)}</div>`:''}</div>
+<table><thead><tr><th>Cant.</th><th>Descripción</th><th>Importe</th></tr></thead><tbody>${o.list.map(i=>`<tr><td>${i.q}</td><td>${esc(i.n)}</td><td>${money(i.t)}</td></tr>`).join('')}${'<tr><td></td><td></td><td></td></tr>'.repeat(Math.max(0,6-o.list.length))}</tbody></table>
+<div class="tt"><div><span>TOTAL</span><b>${money(o.total)}</b></div></div><div class="gr">Gracias por tu preferencia</div></div>`;
+const orderObj=o=>({...o,list:o.list||String(o.items||'').split('\n').map(l=>{const m=l.match(/^•\s*(\d+)\s*x\s*(.+?)\s*—\s*\$([\d,.]+)/);return m?{q:+m[1],n:m[2],t:parseFloat(m[3].replace(/,/g,''))}:null}).filter(Boolean)});
+function printNota(o){
+  const f=document.createElement('iframe');f.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0';document.body.appendChild(f);
+  const d=f.contentWindow.document;d.open();
+  d.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Nota ${folioOf(o)}</title><link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&display=swap" rel="stylesheet"><style>body{margin:0;padding:10mm;background:#fff}${NOTA_CSS}.np{box-shadow:none;width:150mm;margin:0 auto}@page{margin:8mm}</style></head><body>${notaHtml(o)}</body></html>`);d.close();
+  setTimeout(()=>{try{f.contentWindow.focus();f.contentWindow.print()}catch(e){}setTimeout(()=>f.remove(),60000)},800);
+}
 async function makeNota(o){
-  try{await Promise.all([document.fonts.load("500 40px 'Cormorant Garamond'"),document.fonts.load("400 20px Montserrat")])}catch(e){}
-  const W=900,P=70,S=2,GOLD='#C5A059',MUT='#a0a0a0',SERIF="'Cormorant Garamond',Georgia,serif",SANS="Montserrat,Arial,sans-serif";
+  try{await Promise.all([document.fonts.load("600 40px 'Dancing Script'"),document.fonts.load("400 20px Arial")])}catch(e){}
+  const W=900,P=60,S=2,BL='#1d4e9e',RD='#d0021b',INK='#1b2a4a',GR='#b9dcd2',SCR="'Dancing Script','Brush Script MT',cursive",SANS="Arial,Helvetica,sans-serif";
   const cv=document.createElement('canvas'),x=cv.getContext('2d');let H=0;
   const wrap=(t,w,font)=>{x.font=font;const out=[];let ln='';String(t).split(/\s+/).forEach(wd=>{const tt=ln?ln+' '+wd:wd;if(ln&&x.measureText(tt).width>w){out.push(ln);ln=wd}else ln=tt});if(ln)out.push(ln);return out.length?out:['—']};
   const paint=d=>{
     let y=0;
-    const T=(t,px,yy,op={})=>{if(!d)return;x.font=`${op.w||400} ${px}px ${op.f||SANS}`;x.fillStyle=op.c||'#fff';x.textAlign=op.a||'left';x.letterSpacing=op.ls||'0px';x.fillText(t,op.x!=null?op.x:(op.a==='right'?W-P:op.a==='center'?W/2:P),yy)};
-    const sep=()=>{if(d){x.strokeStyle='#2a2a2a';x.lineWidth=1;x.beginPath();x.moveTo(P,y);x.lineTo(W-P,y);x.stroke()}y+=38};
-    const kv=(k,v)=>{const ls=wrap(v,W-2*P-190,`400 22px ${SANS}`);T(k,19,y,{c:MUT});ls.forEach((l,i)=>T(l,22,y+i*32,{x:P+190}));y+=ls.length*32+12};
-    if(d){x.fillStyle='#0a0a0a';x.fillRect(0,0,W,H);x.strokeStyle=GOLD;x.lineWidth=2;x.strokeRect(24,24,W-48,H-48);x.strokeStyle='rgba(197,160,89,.35)';x.lineWidth=1;x.strokeRect(36,36,W-72,H-72)}
-    y=124;T('MARKITOS MB',58,y,{a:'center',f:SERIF,w:500,ls:'14px'});
-    y+=48;T('NOTA DE PEDIDO',17,y,{a:'center',c:GOLD,ls:'7px'});
-    y+=34;if(d){x.strokeStyle=GOLD;x.lineWidth=1;x.beginPath();x.moveTo(W/2-30,y);x.lineTo(W/2+30,y);x.stroke()}
-    y+=66;kv('Folio',folioOf(o));kv('Fecha',fmtDate(o));kv('Hora',fmtTime(o));y+=4;sep();
-    T('CLIENTE',17,y,{c:GOLD,ls:'6px'});y+=42;kv('Nombre',o.name);kv('Teléfono',o.phone);kv('Entrega',o.address);if(o.notes)kv('Notas',o.notes);y+=4;sep();
-    T('PEDIDO',17,y,{c:GOLD,ls:'6px'});y+=42;
-    o.list.forEach(i=>{const ls=wrap(i.n,W-2*P-90-230,`400 22px ${SANS}`);T(i.q+' ×',22,y,{c:GOLD});ls.forEach((l,k)=>T(l,22,y+k*32,{x:P+90}));T(money(i.t),22,y,{a:'right'});y+=ls.length*32+14});
-    y+=4;sep();
-    T('TOTAL',22,y,{c:GOLD,ls:'6px'});T(money(o.total),38,y+2,{a:'right',f:SERIF,w:600,c:GOLD});y+=56;
-    kv('Pago',payTxt(o));
-    y+=44;T('Gracias por tu preferencia',32,y,{a:'center',f:SERIF,w:500,c:GOLD});
-    y+=34;T('ELEGANCIA · EXCLUSIVIDAD · ESTILO',13,y,{a:'center',c:MUT,ls:'4px'});
-    return y+84;
+    const T=(t,px,yy,op={})=>{if(!d)return;x.font=`${op.w||400} ${px}px ${op.f||SANS}`;x.fillStyle=op.c||INK;x.textAlign=op.a||'left';x.letterSpacing=op.ls||'0px';x.fillText(t,op.x!=null?op.x:P,yy)};
+    const L=(x1,y1,x2,y2,c,w)=>{if(!d)return;x.strokeStyle=c;x.lineWidth=w;x.beginPath();x.moveTo(x1,y1);x.lineTo(x2,y2);x.stroke()};
+    const R=(x1,y1,w,h)=>{if(!d)return;x.strokeStyle=BL;x.lineWidth=2;x.strokeRect(x1,y1,w,h)};
+    if(d){x.fillStyle='#fff';x.fillRect(0,0,W,H);x.strokeStyle='#cfd6dd';x.lineWidth=2;x.strokeRect(1,1,W-2,H-2)}
+    T('Nota de Pedido',66,112,{f:SCR,w:600,c:BL});T('MARKITOS MB',16,146,{c:BL,ls:'7px'});
+    T('FOLIO',14,66,{a:'right',x:W-P,c:BL,ls:'5px'});T(folioOf(o),44,116,{a:'right',x:W-P,f:"'Courier New',monospace",w:700,c:RD});
+    y=216;
+    [['Efectivo','cash',P],['Transferencia','transfer',P+210]].forEach(([l,k,cx])=>{R(cx,y-18,22,22);if(o.pay===k){L(cx+4,y-7,cx+9,y-1,BL,3);L(cx+9,y-1,cx+19,y-17,BL,3)}T(l.toUpperCase(),16,y,{x:cx+34,c:BL,ls:'3px'})});
+    y=252;const bx=P,bw=W-2*P,top=y;
+    const cell=(lab,val,cx,cy,w)=>{const ls=wrap(val,w-24,`400 24px ${SANS}`);T(lab.toUpperCase(),12,cy+24,{x:cx+12,c:BL,ls:'3px'});ls.forEach((l,i)=>T(l,24,cy+56+i*30,{x:cx+12}));return ls.length};
+    const row2=(l1,v1,l2,v2)=>{const w=bw/2,n=Math.max(cell(l1,v1,bx,y,w),cell(l2,v2,bx+w,y,w)),h=Math.max(74,44+n*30);L(bx+w,y,bx+w,y+h,BL,2);y+=h;L(bx,y,bx+bw,y,BL,2)};
+    const row1=(l,v)=>{const n=cell(l,v,bx,y,bw),h=Math.max(74,44+n*30);y+=h;L(bx,y,bx+bw,y,BL,2)};
+    row2('Fecha',fmtDate(o),'Hora',fmtTime(o));row2('Cliente',o.name,'Teléfono',o.phone);row1('Dirección de entrega',o.address);if(o.notes)row1('Notas',o.notes);
+    R(bx,top,bw,y-top);
+    y+=28;const tt=y,c1=P+90,c2=P+560;
+    T('CANT.',13,y+27,{x:(P+c1)/2,a:'center',c:BL,ls:'3px'});T('DESCRIPCIÓN',13,y+27,{x:(c1+c2)/2,a:'center',c:BL,ls:'3px'});T('IMPORTE',13,y+27,{x:(c2+W-P)/2,a:'center',c:BL,ls:'3px'});
+    y+=42;L(P,y,W-P,y,BL,2);
+    const rows=o.list.map(i=>({q:i.q,ls:wrap(i.n,c2-c1-24,`400 22px ${SANS}`),t:money(i.t)}));while(rows.length<6)rows.push(null);
+    rows.forEach(r=>{const h=r?Math.max(56,r.ls.length*30+26):56;if(r){T(String(r.q),24,y+36,{x:(P+c1)/2,a:'center'});r.ls.forEach((l,k)=>T(l,22,y+36+k*30,{x:c1+12}));T(r.t,22,y+36,{x:W-P-12,a:'right'})}y+=h;L(P,y,W-P,y,GR,1.5)});
+    L(c1,tt,c1,y,BL,2);L(c2,tt,c2,y,BL,2);R(P,tt,W-2*P,y-tt);
+    y+=28;const tw=440;R(W-P-tw,y,tw,72);T('TOTAL',14,y+43,{x:W-P-tw+18,c:BL,ls:'5px'});T(money(o.total),36,y+49,{x:W-P-18,a:'right',w:700});y+=72;
+    y+=74;T('Gracias por tu preferencia',40,y,{x:W/2,a:'center',f:SCR,w:600,c:BL});
+    return y+60;
   };
   H=paint(false);cv.width=W*S;cv.height=H*S;x.scale(S,S);paint(true);
   return new Promise(r=>cv.toBlob(r,'image/png'));
@@ -224,7 +258,7 @@ function modal(){
   }
   if(view==='done'){
     const o=lastOrder;
-    return `<div class="ov c"><div class="dr" style="height:auto;max-height:94vh;max-width:440px;text-align:center;border:1px solid var(--line)"><h2 style="margin:0">Gracias por tu pedido</h2><p style="color:var(--mut);margin:0">Se abrió WhatsApp con tu nota lista. Solo presiona <b>Enviar</b> para que la recibamos. Si no se abrió, usa el botón.</p>${o?notaHtml(o):''}<button class="btn" data-a="sendwa">Enviar pedido por WhatsApp</button><button class="btn o" data-a="sharenota">Compartir nota como imagen</button><button class="btn o" data-a="close">Volver a la tienda</button></div></div>`;
+    return `<div class="ov c"><div class="dr" style="height:auto;max-height:94vh;max-width:440px;text-align:center;border:1px solid var(--line)"><h2 style="margin:0">Gracias por tu pedido</h2><p style="color:var(--mut);margin:0">Se abrió WhatsApp con tu nota lista. Solo presiona <b>Enviar</b> para que la recibamos. Si no se abrió, usa el botón.</p>${o?notaHtml(o):''}<button class="btn" data-a="sendwa">Enviar pedido por WhatsApp</button><button class="btn o" data-a="sharenota">Compartir nota como imagen</button><button class="btn o" data-a="printnota">Imprimir nota</button><button class="btn o" data-a="close">Volver a la tienda</button></div></div>`;
   }
   if(view&&view.startsWith('p:')){
     const p=prod(view.slice(2));
@@ -268,7 +302,7 @@ function renderAdmin(){
     if(edit){const p=edit;b=`<h2>${p.id?'Editar artículo':'Nuevo artículo'}</h2><label>Multimedia del producto (Video o Imagen)</label><div class="ph" style="max-width:180px;margin:6px 0">${renderMedia(p.img, p.mediaType, false)}</div><input type="file" id="f-img" accept="image/*,video/*"><label>Nombre</label><input id="e-n" value="${esc(p.n)}"><label>Precio (MXN)</label><input id="e-p" type="number" min="0" value="${p.p}"><label>Categoría</label><select id="e-c">${c.cats.map(x=>`<option ${x===p.c?'selected':''}>${esc(x)}</option>`).join('')}</select><label>Descripción</label><textarea id="e-d" rows="4">${esc(p.d)}</textarea><label><input type="checkbox" id="e-s" style="width:auto;margin-right:8px" ${p.so?'checked':''}>Agotado</label><div style="display:flex;gap:10px;margin-top:14px"><button class="btn" data-a="psave">Guardar</button><button class="btn o" data-a="pcancel">Cancelar</button></div>`}
     else b=`<button class="btn" style="max-width:240px;margin-bottom:20px" data-a="pnew">+ Agregar producto</button>`+D.products.map(p=>`<div class="it"><div class="ph">${renderMedia(p.img, p.mediaType, false)}</div><div>${esc(p.n)}${p.so?' <small style="color:var(--gold)">(agotado)</small>':''}<div style="color:var(--mut);font-size:13px">${esc(p.c)} · ${money(p.p)}</div></div><div><button class="sm" data-a="pso" data-v="${p.id}">${p.so?'Disponible':'Agotar'}</button><button class="sm" data-a="pedit" data-v="${p.id}">Editar</button><button class="sm" data-a="pdel" data-v="${p.id}">Borrar</button></div></div>`).join('');
   }
-  if(tab==='orders')b=orders.length?orders.map(o=>`<div class="bank"><small>${new Date(o.at).toLocaleString('es-MX')}</small><br><b>${esc(o.name)}</b> · ${esc(o.phone)}<br><small><b>Dirección:</b> ${esc(o.address)}</small><br>${esc(o.notes||'')}<div style="margin:8px 0;white-space:pre-line">${esc(o.items)}</div><b>${money(o.total)}</b> · ${o.pay==='transfer'?'Transferencia':'Efectivo'}</div>`).join(''):'<p style="color:var(--mut)">Aún no hay pedidos.</p>';
+  if(tab==='orders')b=orders.length?orders.map((o,ix)=>`<div class="bank"><small>${new Date(o.at).toLocaleString('es-MX')}</small><br><b>${esc(o.name)}</b> · ${esc(o.phone)}<br><small><b>Dirección:</b> ${esc(o.address)}</small><br>${esc(o.notes||'')}<div style="margin:8px 0;white-space:pre-line">${esc(o.items)}</div><b>${money(o.total)}</b> · ${o.pay==='transfer'?'Transferencia':'Efectivo'}<br><button class="btn o" style="width:auto;padding:10px 18px;margin-top:12px" data-a="oprint" data-v="${ix}">Imprimir nota</button></div>`).join(''):'<p style="color:var(--mut)">Aún no hay pedidos.</p>';
   if(tab==='coms')b=allComs.length?allComs.map(k=>`<div class="com"><div style="color:var(--gold)">${'★'.repeat(k.stars||5)} <small>${k.ok?'(publicada)':'(pendiente)'}</small></div><b>${esc(k.name)}</b><div>${esc(k.text)}</div><button class="sm" data-a="cok" data-v="${k.id}" style="margin:6px 6px 0 0">${k.ok?'Ocultar':'Aprobar'}</button><button class="sm" data-a="cdel" data-v="${k.id}">Borrar</button></div>`).join(''):'<p style="color:var(--mut)">Aún no hay opiniones.</p>';
   if(tab==='cfg')b=`<h2>Portada de la Web</h2><label>Video o Imagen Principal de la Tienda</label><div class="ph" style="max-width:320px;height:180px;margin:6px 0">${renderMedia(c.heroMedia, c.heroMedia ? (c.heroMedia.includes('.mp4')?'video':'image') : 'image', false)}</div><input type="file" id="f-hero" accept="image/*,video/*"><h2 style="margin-top:30px">Ajustes Generales</h2><label>WhatsApp (52 + 10 dígitos)</label><input id="c-wa" value="${esc(waNum())}"><label>Banco</label><input id="c-bank" value="${esc(c.bank)}"><label>Titular</label><input id="c-holder" value="${esc(c.holder)}"><label>CLABE</label><input id="c-clabe" value="${esc(c.clabe)}"><label>Correo</label><input id="c-mail" value="${esc(c.mail)}"><label>Instagram (enlace)</label><input id="c-ig" value="${esc(c.ig)}"><label>Facebook (enlace)</label><input id="c-fb" value="${esc(c.fb)}"><label>TikTok (enlace)</label><input id="c-tt" value="${esc(c.tt)}"><label>Categorías (separadas por coma)</label><input id="c-cats" value="${esc(c.cats.join(', '))}"><button class="btn" data-a="csave">Guardar ajustes</button>`;
   return `<header><button class="ib" data-a="exit" style="justify-self:start">← Tienda</button><div class="logo">ADMIN</div><button class="ib" data-a="logout">Salir</button></header><div class="adm"><div class="tabs">${[['prods','Productos'],['orders','Pedidos'],['coms','Opiniones'],['cfg','Ajustes']].map(t=>`<button class="${tab===t[0]?'on':''}" data-a="tab" data-v="${t[0]}">${t[1]}</button>`).join('')}</div>${b}</div>`;
@@ -289,6 +323,8 @@ document.addEventListener('click',async e=>{
     if(a==='wa'){e.preventDefault();openWA();return}
     else if(a==='sendwa'){openWA(done);return}
     else if(a==='sharenota'){shareNota();return}
+    else if(a==='printnota'){printNota(lastOrder);return}
+    else if(a==='oprint'){printNota(orderObj(orders[+v]));return}
     else if(a==='shop'){$('#col').scrollIntoView({behavior:'smooth'});return}
     else if(a==='home'){cat='Todo';view=null}
     else if(a==='cat')cat=v;

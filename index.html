@@ -82,7 +82,7 @@ footer .logo{color:#fff;margin-bottom:24px}
 </head>
 <body>
 <div id="app"></div>
-<script type="application/json" id="data">{"cfg":{"wa":"","bank":"Tu banco","holder":"Nombre del titular","clabe":"000000000000000000","ig":"","fb":"","tt":"","mail":"","cats":["Ropa","Perfumes","Belleza","Accesorios"],"heroMedia":""},"products":[{"id":"p1","n":"Perfume Noir Absolu","p":1890,"c":"Perfumes","d":"Fragancia amaderada con notas de oud, vainilla y ámbar. Frasco de 100 ml.","img":"","so":false,"mediaType":"image"},{"id":"p2","n":"Blazer Carbón Slim","p":2450,"c":"Ropa","d":"Blazer entallado en tejido ligero, forro de satén y botones dorados.","img":"","so":false,"mediaType":"image"},{"id":"p3","n":"Collar Champán","p":980,"c":"Accesorios","d":"Cadena fina bañada en oro champán, cierre de seguridad.","img":"","so":true,"mediaType":"image"}]}</script>
+<script type="application/json" id="data">{"cfg":{"wa":"","bank":"Tu banco","holder":"Nombre del titular","clabe":"000000000000000000","ig":"","fb":"","tt":"","mail":"","cats":["Ropa","Calzado","Perfumes","Belleza","Accesorios"],"heroMedia":""},"products":[{"id":"p1","n":"Perfume Noir Absolu","p":1890,"c":"Perfumes","d":"Fragancia amaderada con notas de oud, vainilla y ámbar. Frasco de 100 ml.","img":"","so":false,"mediaType":"image"},{"id":"p2","n":"Blazer Carbón Slim","p":2450,"c":"Ropa","d":"Blazer entallado en tejido ligero, forro de satén y botones dorados.","img":"","so":false,"mediaType":"image"},{"id":"p3","n":"Collar Champán","p":980,"c":"Accesorios","d":"Cadena fina bañada en oro champán, cierre de seguridad.","img":"","so":true,"mediaType":"image"}]}</script>
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import{getFirestore,collection,doc,onSnapshot,query,where,addDoc,setDoc,updateDoc,deleteDoc}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -99,11 +99,15 @@ const money=n=>'$'+Number(n||0).toLocaleString('es-MX',{minimumFractionDigits:2}
 let D=JSON.parse($('#data').textContent),cart={},cat='Todo',view=null,pay='transfer',done=null,
     admin=location.hash==='#admin',tab='prods',edit=null,orders=[];
 try{cart=JSON.parse(localStorage.getItem('mmb-cart')||'{}')}catch(e){}
+fixCats();
 const save=()=>{try{localStorage.setItem('mmb-cart',JSON.stringify(cart))}catch(e){}};
 const prod=id=>D.products.find(p=>p.id===id);
 const items=()=>Object.keys(cart).map(id=>({p:prod(id),q:cart[id]})).filter(i=>i.p&&!i.p.so);
 const total=()=>items().reduce((s,i)=>s+i.p.p*i.q,0);
 const count=()=>items().reduce((s,i)=>s+i.q,0);
+const waNum=()=>(D.cfg.wa||['5256','1238','6817'].join('')).replace(/\D/g,'');
+const openWA=t=>{const w=window.open('https://wa.me/'+waNum()+(t?'?text='+encodeURIComponent(t):''),'_blank');if(w)w.opener=null};
+const fixCats=()=>{if(!Array.isArray(D.cfg.cats))D.cfg.cats=[];if(!D.cfg.cats.includes('Calzado')){const i=D.cfg.cats.indexOf('Ropa');D.cfg.cats.splice(i+1,0,'Calzado')}};
 function toast(t){const e=document.createElement('div');e.className='toast';e.textContent=t;document.body.appendChild(e);setTimeout(()=>e.remove(),2600)}
 
 function renderMedia(src, type, autoplay=true){
@@ -138,10 +142,10 @@ function renderStore(){
   <main class="grid">${list.length?list.map(p=>`<div class="card ${p.so?'so':''}" data-a="prod" data-v="${p.id}"><div class="ph">${renderMedia(p.img, p.mediaType)}${p.so?'<span class="tag">Agotado</span>':''}</div><h3>${esc(p.n)}</h3><div class="pr">${money(p.p)}</div></div>`).join(''):'<p style="grid-column:1/-1;text-align:center;color:var(--mut)">Próximamente nuevos artículos.</p>'}</main>
   <div class="trust"><div><b>Pago seguro</b><span>Transferencia o efectivo contra entrega</span></div><div><b>Atención personal</b><span>Te respondemos directo por WhatsApp</span></div></div>
   <footer><div class="logo">MARKITOS <span>MB</span></div><div>
-  <a href="https://wa.me/${esc(c.wa)}" target="_blank" rel="noopener">WhatsApp</a>
+  <a href="#" data-a="wa">WhatsApp</a>
   ${c.mail?`<a href="mailto:${esc(c.mail)}">Correo</a>`:''}${c.ig?`<a href="${esc(c.ig)}" target="_blank" rel="noopener">Instagram</a>`:''}${c.fb?`<a href="${esc(c.fb)}" target="_blank" rel="noopener">Facebook</a>`:''}${c.tt?`<a href="${esc(c.tt)}" target="_blank" rel="noopener">TikTok</a>`:''}</div>
   <p style="font-size:11px;opacity:.4;margin-top:40px;letter-spacing:.15em">© MARKITOS MB · Todos los derechos reservados</p></footer>
-  <a class="wa" href="https://wa.me/${esc(c.wa)}" target="_blank" rel="noopener">WhatsApp</a>
+  <a class="wa" href="#" data-a="wa">WhatsApp</a>
   <button class="dove" data-a="com" aria-label="Opiniones">${DOVE}<span>Opiniones</span></button>${modal()}`;
 }
 
@@ -161,7 +165,7 @@ function modal(){
     <div class="row" style="margin-bottom:20px"><span>Total</span><h2 style="margin:0;color:var(--gold)">${money(total())}</h2></div><button class="btn" data-a="confirm">Confirmar pedido</button></div></div></div>`;
   }
   if(view==='done'){
-    return `<div class="ov c"><div class="dr" style="height:auto;max-width:440px;text-align:center;border:1px solid var(--line)"><h2>Gracias por tu pedido</h2><p style="color:var(--mut)">Para procesar tu compra, envíanos el resumen de orden generado a nuestro WhatsApp.</p><a class="btn" target="_blank" rel="noopener" href="https://wa.me/${esc(D.cfg.wa)}?text=${encodeURIComponent(done)}">Enviar pedido por WhatsApp</a><button class="btn o" style="margin-top:10px" data-a="close">Volver a la tienda</button></div></div>`;
+    return `<div class="ov c"><div class="dr" style="height:auto;max-width:440px;text-align:center;border:1px solid var(--line)"><h2>Gracias por tu pedido</h2><p style="color:var(--mut)">Se abrió WhatsApp con tu pedido listo. Solo presiona <b>Enviar</b> para que lo recibamos. Si no se abrió, usa el botón de abajo.</p><button class="btn" data-a="sendwa">Enviar pedido por WhatsApp</button><button class="btn o" style="margin-top:10px" data-a="close">Volver a la tienda</button></div></div>`;
   }
   if(view&&view.startsWith('p:')){
     const p=prod(view.slice(2));
@@ -173,9 +177,11 @@ function modal(){
 async function confirmOrder(){
   const n=$('#f-n').value.trim(),t=$('#f-t').value.trim(),a=$('#f-a').value.trim(),o=$('#f-o').value.trim();
   if(!n||!t||!a){toast('Por favor ingresa tu nombre, teléfono y dirección de entrega');return}
-  const its=items(),lines=its.map(i=>`• ${i.q} x ${i.p.n} — ${money(i.p.p*i.q)}`).join('\n');
+  const its=items();if(!its.length){toast('Tu bolsa está vacía');return}
+  const lines=its.map(i=>`• ${i.q} x ${i.p.n} — ${money(i.p.p*i.q)}`).join('\n');
   const order={name:n,phone:t,address:a,notes:o,pay,total:total(),items:lines,at:Date.now()};
   done=`*Nuevo pedido MARKITOS MB*\n\n${lines}\n\n*Total:* ${money(total())}\n*Pago:* ${pay==='transfer'?'Transferencia bancaria':'Efectivo contra entrega'}\n\n*Cliente:* ${n}\n*Tel:* ${t}\n*Dirección de Entrega:* ${a}\n*Notas:* ${o||'—'}`;
+  openWA(done);
   try{await FB.addOrder(order)}catch(e){}
   cart={};save();view='done';render();
 }
@@ -186,11 +192,11 @@ const soft=()=>{const a=document.activeElement;if(!a||!a.matches('input,textarea
 if(LIVE){
   const app=initializeApp(firebaseConfig);db=getFirestore(app);au=getAuth(app);D.products=[];
   onSnapshot(collection(db,'products'),s=>{D.products=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.t||0)-(a.t||0));soft()},()=>{});
-  onSnapshot(doc(db,'config','store'),s=>{if(s.exists()){D.cfg={...D.cfg,...s.data()};soft()}},()=>{});
+  onSnapshot(doc(db,'config','store'),s=>{if(s.exists()){D.cfg={...D.cfg,...s.data()};fixCats();soft()}},()=>{});
   onSnapshot(query(collection(db,'comments'),where('ok','==',true)),s=>{coms=s.docs.map(d=>(d.data())).sort((a,b)=>b.t-a.t);soft()},()=>{});
   let un=[];
   onAuthStateChanged(au,u=>{user=u;un.forEach(f=>f());un=[];
-    if(u){un.push(onSnapshot(collection(db,'orders'),s=>{orders=s.docs.map(d=>data()).sort((a,b)=>b.at-a.at);soft()},()=>{}),onSnapshot(collection(db,'comments'),s=>{allComs=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>b.t-a.t);soft()},()=>{}))}
+    if(u){un.push(onSnapshot(collection(db,'orders'),s=>{orders=s.docs.map(d=>d.data()).sort((a,b)=>b.at-a.at);soft()},()=>{}),onSnapshot(collection(db,'comments'),s=>{allComs=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>b.t-a.t);soft()},()=>{}))}
     soft()});
 }
 
@@ -203,7 +209,7 @@ function renderAdmin(){
   }
   if(tab==='orders')b=orders.length?orders.map(o=>`<div class="bank"><small>${new Date(o.at).toLocaleString('es-MX')}</small><br><b>${esc(o.name)}</b> · ${esc(o.phone)}<br><small><b>Dirección:</b> ${esc(o.address)}</small><br>${esc(o.notes||'')}<div style="margin:8px 0;white-space:pre-line">${esc(o.items)}</div><b>${money(o.total)}</b> · ${o.pay==='transfer'?'Transferencia':'Efectivo'}</div>`).join(''):'<p style="color:var(--mut)">Aún no hay pedidos.</p>';
   if(tab==='coms')b=allComs.length?allComs.map(k=>`<div class="com"><div style="color:var(--gold)">${'★'.repeat(k.stars||5)} <small>${k.ok?'(publicada)':'(pendiente)'}</small></div><b>${esc(k.name)}</b><div>${esc(k.text)}</div><button class="sm" data-a="cok" data-v="${k.id}" style="margin:6px 6px 0 0">${k.ok?'Ocultar':'Aprobar'}</button><button class="sm" data-a="cdel" data-v="${k.id}">Borrar</button></div>`).join(''):'<p style="color:var(--mut)">Aún no hay opiniones.</p>';
-  if(tab==='cfg')b=`<h2>Portada de la Web</h2><label>Video o Imagen Principal de la Tienda</label><div class="ph" style="max-width:320px;height:180px;margin:6px 0">${renderMedia(c.heroMedia, c.heroMedia ? (c.heroMedia.includes('.mp4')?'video':'image') : 'image', false)}</div><input type="file" id="f-hero" accept="image/*,video/*"><h2 style="margin-top:30px">Ajustes Generales</h2><label>WhatsApp (ej. 5212281234567)</label><input id="c-wa" value="${esc(c.wa)}"><label>Banco</label><input id="c-bank" value="${esc(c.bank)}"><label>Titular</label><input id="c-holder" value="${esc(c.holder)}"><label>CLABE</label><input id="c-clabe" value="${esc(c.clabe)}"><label>Correo</label><input id="c-mail" value="${esc(c.mail)}"><label>Instagram (enlace)</label><input id="c-ig" value="${esc(c.ig)}"><label>Facebook (enlace)</label><input id="c-fb" value="${esc(c.fb)}"><label>TikTok (enlace)</label><input id="c-tt" value="${esc(c.tt)}"><label>Categorías (separadas por coma)</label><input id="c-cats" value="${esc(c.cats.join(', '))}"><button class="btn" data-a="csave">Guardar ajustes</button>`;
+  if(tab==='cfg')b=`<h2>Portada de la Web</h2><label>Video o Imagen Principal de la Tienda</label><div class="ph" style="max-width:320px;height:180px;margin:6px 0">${renderMedia(c.heroMedia, c.heroMedia ? (c.heroMedia.includes('.mp4')?'video':'image') : 'image', false)}</div><input type="file" id="f-hero" accept="image/*,video/*"><h2 style="margin-top:30px">Ajustes Generales</h2><label>WhatsApp (52 + 10 dígitos)</label><input id="c-wa" value="${esc(waNum())}"><label>Banco</label><input id="c-bank" value="${esc(c.bank)}"><label>Titular</label><input id="c-holder" value="${esc(c.holder)}"><label>CLABE</label><input id="c-clabe" value="${esc(c.clabe)}"><label>Correo</label><input id="c-mail" value="${esc(c.mail)}"><label>Instagram (enlace)</label><input id="c-ig" value="${esc(c.ig)}"><label>Facebook (enlace)</label><input id="c-fb" value="${esc(c.fb)}"><label>TikTok (enlace)</label><input id="c-tt" value="${esc(c.tt)}"><label>Categorías (separadas por coma)</label><input id="c-cats" value="${esc(c.cats.join(', '))}"><button class="btn" data-a="csave">Guardar ajustes</button>`;
   return `<header><button class="ib" data-a="exit" style="justify-self:start">← Tienda</button><div class="logo">ADMIN</div><button class="ib" data-a="logout">Salir</button></header><div class="adm"><div class="tabs">${[['prods','Productos'],['orders','Pedidos'],['coms','Opiniones'],['cfg','Ajustes']].map(t=>`<button class="${tab===t[0]?'on':''}" data-a="tab" data-v="${t[0]}">${t[1]}</button>`).join('')}</div>${b}</div>`;
 }
 
@@ -219,7 +225,9 @@ document.addEventListener('click',async e=>{
   if(el.classList.contains('ov')&&e.target!==el)return;
   const a=el.dataset.a,v=el.dataset.v;
   try{
-    if(a==='shop'){$('#col').scrollIntoView({behavior:'smooth'});return}
+    if(a==='wa'){e.preventDefault();openWA();return}
+    else if(a==='sendwa'){openWA(done);return}
+    else if(a==='shop'){$('#col').scrollIntoView({behavior:'smooth'});return}
     else if(a==='home'){cat='Todo';view=null}
     else if(a==='cat')cat=v;
     else if(a==='prod')view='p:'+v;

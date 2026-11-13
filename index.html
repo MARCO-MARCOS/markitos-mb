@@ -78,6 +78,14 @@ footer .logo{color:#fff;margin-bottom:24px}
 .stars{display:flex;gap:6px;margin:6px 0 16px}.stars button{background:none;border:0;font-size:32px;color:var(--line);padding:0}.stars .on{color:var(--gold)}
 .com{border-bottom:1px solid var(--line);padding:16px 0}
 .x{position:absolute;top:16px;right:20px;background:none;border:0;font-size:28px;color:var(--mut);cursor:pointer}.x:hover{color:#fff}
+
+.nota{background:#0d0d0d;border:1px solid var(--gold);padding:28px 22px;text-align:left;position:relative}
+.nota:before{content:'';position:absolute;inset:5px;border:1px solid rgba(197,160,89,.3);pointer-events:none}
+.nota .k{font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);margin-bottom:6px}
+.nota .r{display:flex;justify-content:space-between;gap:14px;font-size:13px;padding:3px 0}
+.nota .r span{color:var(--mut)}.nota .r b{font-weight:400;text-align:right;word-break:break-word}
+.nota hr{border:0;border-top:1px solid var(--line);margin:14px 0}
+.nota .tot span{color:var(--gold);letter-spacing:.25em;font-size:12px}.nota .tot b{font:600 24px 'Cormorant Garamond',serif;color:var(--gold)}
 </style>
 </head>
 <body>
@@ -108,6 +116,56 @@ const waNum=()=>(D.cfg.wa||['5256','1238','6817'].join('')).replace(/\D/g,'');
 const openWA=t=>{const w=window.open('https://wa.me/'+waNum()+(t?'?text='+encodeURIComponent(t):''),'_blank');if(w)w.opener=null};
 const fixCats=()=>{if(!Array.isArray(D.cfg.cats))D.cfg.cats=[];if(!D.cfg.cats.includes('Calzado')){const i=D.cfg.cats.indexOf('Ropa');D.cfg.cats.splice(i+1,0,'Calzado')}};
 fixCats();
+
+let lastOrder=null,notaBlob=null;
+const folioOf=o=>'MB-'+String(o.at).slice(-6);
+const fmtDate=o=>new Date(o.at).toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+const fmtTime=o=>new Date(o.at).toLocaleTimeString('es-MX',{hour:'numeric',minute:'2-digit'});
+const payTxt=o=>o.pay==='transfer'?'Transferencia bancaria':'Efectivo contra entrega';
+const notaText=o=>{const L='━━━━━━━━━━━━━━━━━━';return [L,'✦ *MARKITOS MB* ✦','_Nota de pedido_',L,
+  '🧾 *Folio:* '+folioOf(o),'📅 *Fecha:* '+fmtDate(o),'🕐 *Hora:* '+fmtTime(o),'',
+  '👤 *CLIENTE*','Nombre: '+o.name,'Teléfono: '+o.phone,'Entrega: '+o.address,'Notas: '+(o.notes||'—'),'',
+  '🛍️ *PEDIDO*',...o.list.map(i=>'• '+i.q+' × '+i.n+' — '+money(i.t)),'',
+  '💰 *TOTAL: '+money(o.total)+'*','💳 *Pago:* '+payTxt(o),L,'Gracias por tu preferencia ✦'].join('\n')};
+const notaHtml=o=>`<div class="nota"><div class="serif" style="text-align:center;font-size:26px;letter-spacing:.3em;padding-left:.3em">MARKITOS <span style="color:var(--gold)">MB</span></div><div class="k" style="text-align:center;margin:4px 0 16px">Nota de pedido</div>
+<div class="r"><span>Folio</span><b>${folioOf(o)}</b></div><div class="r"><span>Fecha</span><b>${esc(fmtDate(o))}</b></div><div class="r"><span>Hora</span><b>${esc(fmtTime(o))}</b></div><hr>
+<div class="k">Cliente</div><div class="r"><span>Nombre</span><b>${esc(o.name)}</b></div><div class="r"><span>Teléfono</span><b>${esc(o.phone)}</b></div><div class="r"><span>Entrega</span><b>${esc(o.address)}</b></div>${o.notes?`<div class="r"><span>Notas</span><b>${esc(o.notes)}</b></div>`:''}<hr>
+<div class="k">Pedido</div>${o.list.map(i=>`<div class="r"><span style="color:var(--ink)">${i.q} × ${esc(i.n)}</span><b>${money(i.t)}</b></div>`).join('')}<hr>
+<div class="r tot"><span>TOTAL</span><b>${money(o.total)}</b></div><div class="r"><span>Pago</span><b>${payTxt(o)}</b></div></div>`;
+async function makeNota(o){
+  try{await Promise.all([document.fonts.load("500 40px 'Cormorant Garamond'"),document.fonts.load("400 20px Montserrat")])}catch(e){}
+  const W=900,P=70,S=2,GOLD='#C5A059',MUT='#a0a0a0',SERIF="'Cormorant Garamond',Georgia,serif",SANS="Montserrat,Arial,sans-serif";
+  const cv=document.createElement('canvas'),x=cv.getContext('2d');let H=0;
+  const wrap=(t,w,font)=>{x.font=font;const out=[];let ln='';String(t).split(/\s+/).forEach(wd=>{const tt=ln?ln+' '+wd:wd;if(ln&&x.measureText(tt).width>w){out.push(ln);ln=wd}else ln=tt});if(ln)out.push(ln);return out.length?out:['—']};
+  const paint=d=>{
+    let y=0;
+    const T=(t,px,yy,op={})=>{if(!d)return;x.font=`${op.w||400} ${px}px ${op.f||SANS}`;x.fillStyle=op.c||'#fff';x.textAlign=op.a||'left';x.letterSpacing=op.ls||'0px';x.fillText(t,op.x!=null?op.x:(op.a==='right'?W-P:op.a==='center'?W/2:P),yy)};
+    const sep=()=>{if(d){x.strokeStyle='#2a2a2a';x.lineWidth=1;x.beginPath();x.moveTo(P,y);x.lineTo(W-P,y);x.stroke()}y+=38};
+    const kv=(k,v)=>{const ls=wrap(v,W-2*P-190,`400 22px ${SANS}`);T(k,19,y,{c:MUT});ls.forEach((l,i)=>T(l,22,y+i*32,{x:P+190}));y+=ls.length*32+12};
+    if(d){x.fillStyle='#0a0a0a';x.fillRect(0,0,W,H);x.strokeStyle=GOLD;x.lineWidth=2;x.strokeRect(24,24,W-48,H-48);x.strokeStyle='rgba(197,160,89,.35)';x.lineWidth=1;x.strokeRect(36,36,W-72,H-72)}
+    y=124;T('MARKITOS MB',58,y,{a:'center',f:SERIF,w:500,ls:'14px'});
+    y+=48;T('NOTA DE PEDIDO',17,y,{a:'center',c:GOLD,ls:'7px'});
+    y+=34;if(d){x.strokeStyle=GOLD;x.lineWidth=1;x.beginPath();x.moveTo(W/2-30,y);x.lineTo(W/2+30,y);x.stroke()}
+    y+=66;kv('Folio',folioOf(o));kv('Fecha',fmtDate(o));kv('Hora',fmtTime(o));y+=4;sep();
+    T('CLIENTE',17,y,{c:GOLD,ls:'6px'});y+=42;kv('Nombre',o.name);kv('Teléfono',o.phone);kv('Entrega',o.address);if(o.notes)kv('Notas',o.notes);y+=4;sep();
+    T('PEDIDO',17,y,{c:GOLD,ls:'6px'});y+=42;
+    o.list.forEach(i=>{const ls=wrap(i.n,W-2*P-90-230,`400 22px ${SANS}`);T(i.q+' ×',22,y,{c:GOLD});ls.forEach((l,k)=>T(l,22,y+k*32,{x:P+90}));T(money(i.t),22,y,{a:'right'});y+=ls.length*32+14});
+    y+=4;sep();
+    T('TOTAL',22,y,{c:GOLD,ls:'6px'});T(money(o.total),38,y+2,{a:'right',f:SERIF,w:600,c:GOLD});y+=56;
+    kv('Pago',payTxt(o));
+    y+=44;T('Gracias por tu preferencia',32,y,{a:'center',f:SERIF,w:500,c:GOLD});
+    y+=34;T('ELEGANCIA · EXCLUSIVIDAD · ESTILO',13,y,{a:'center',c:MUT,ls:'4px'});
+    return y+84;
+  };
+  H=paint(false);cv.width=W*S;cv.height=H*S;x.scale(S,S);paint(true);
+  return new Promise(r=>cv.toBlob(r,'image/png'));
+}
+function shareNota(){
+  if(!notaBlob){toast('Preparando tu nota… intenta de nuevo');return}
+  const name='Nota-'+folioOf(lastOrder)+'.png',file=new File([notaBlob],name,{type:'image/png'});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({files:[file],title:'Nota de pedido MARKITOS MB'}).catch(()=>{})}
+  else{const u=URL.createObjectURL(notaBlob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);toast('Nota guardada como imagen')}
+}
 function toast(t){const e=document.createElement('div');e.className='toast';e.textContent=t;document.body.appendChild(e);setTimeout(()=>e.remove(),2600)}
 
 function renderMedia(src, type, autoplay=true){
@@ -165,7 +223,8 @@ function modal(){
     <div class="row" style="margin-bottom:20px"><span>Total</span><h2 style="margin:0;color:var(--gold)">${money(total())}</h2></div><button class="btn" data-a="confirm">Confirmar pedido</button></div></div></div>`;
   }
   if(view==='done'){
-    return `<div class="ov c"><div class="dr" style="height:auto;max-width:440px;text-align:center;border:1px solid var(--line)"><h2>Gracias por tu pedido</h2><p style="color:var(--mut)">Se abrió WhatsApp con tu pedido listo. Solo presiona <b>Enviar</b> para que lo recibamos. Si no se abrió, usa el botón de abajo.</p><button class="btn" data-a="sendwa">Enviar pedido por WhatsApp</button><button class="btn o" style="margin-top:10px" data-a="close">Volver a la tienda</button></div></div>`;
+    const o=lastOrder;
+    return `<div class="ov c"><div class="dr" style="height:auto;max-height:94vh;max-width:440px;text-align:center;border:1px solid var(--line)"><h2 style="margin:0">Gracias por tu pedido</h2><p style="color:var(--mut);margin:0">Se abrió WhatsApp con tu nota lista. Solo presiona <b>Enviar</b> para que la recibamos. Si no se abrió, usa el botón.</p>${o?notaHtml(o):''}<button class="btn" data-a="sendwa">Enviar pedido por WhatsApp</button><button class="btn o" data-a="sharenota">Compartir nota como imagen</button><button class="btn o" data-a="close">Volver a la tienda</button></div></div>`;
   }
   if(view&&view.startsWith('p:')){
     const p=prod(view.slice(2));
@@ -180,7 +239,9 @@ async function confirmOrder(){
   const its=items();if(!its.length){toast('Tu bolsa está vacía');return}
   const lines=its.map(i=>`• ${i.q} x ${i.p.n} — ${money(i.p.p*i.q)}`).join('\n');
   const order={name:n,phone:t,address:a,notes:o,pay,total:total(),items:lines,at:Date.now()};
-  done=`*Nuevo pedido MARKITOS MB*\n\n${lines}\n\n*Total:* ${money(total())}\n*Pago:* ${pay==='transfer'?'Transferencia bancaria':'Efectivo contra entrega'}\n\n*Cliente:* ${n}\n*Tel:* ${t}\n*Dirección de Entrega:* ${a}\n*Notas:* ${o||'—'}`;
+  lastOrder={...order,list:its.map(i=>({q:i.q,n:i.p.n,t:i.p.p*i.q}))};notaBlob=null;
+  done=notaText(lastOrder);
+  makeNota(lastOrder).then(b=>{notaBlob=b}).catch(()=>{});
   openWA(done);
   try{await FB.addOrder(order)}catch(e){}
   cart={};save();view='done';render();
@@ -227,6 +288,7 @@ document.addEventListener('click',async e=>{
   try{
     if(a==='wa'){e.preventDefault();openWA();return}
     else if(a==='sendwa'){openWA(done);return}
+    else if(a==='sharenota'){shareNota();return}
     else if(a==='shop'){$('#col').scrollIntoView({behavior:'smooth'});return}
     else if(a==='home'){cat='Todo';view=null}
     else if(a==='cat')cat=v;

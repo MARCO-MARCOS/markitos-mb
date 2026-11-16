@@ -79,6 +79,31 @@ footer .logo{color:#fff;margin-bottom:24px}
 .com{border-bottom:1px solid var(--line);padding:16px 0}
 .x{position:absolute;top:16px;right:20px;background:none;border:0;font-size:28px;color:var(--mut);cursor:pointer}.x:hover{color:#fff}
 
+
+.lk{background:#f4f2ee;color:#16130f;padding:72px 0 64px;position:relative}
+.lk-in{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:1fr 340px;padding:0 20px}
+.lk-stage{min-width:0}
+.lk-t1{font:300 clamp(32px,4.2vw,46px) 'Cormorant Garamond',serif}
+.lk-sub{font-size:10px;letter-spacing:.18em;color:#8b857b;margin:8px 0 20px;text-transform:uppercase}
+.lk-track{--w:clamp(170px,19vw,260px);display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding:10px calc(50% - var(--w)/2) 28px;cursor:none;-webkit-overflow-scrolling:touch}
+.lk-track::-webkit-scrollbar{display:none}
+.lk-track.drag{scroll-snap-type:none}
+.lk-i{flex:0 0 var(--w);aspect-ratio:3/4;scroll-snap-align:center;margin:0 8px;transform:scale(calc(1 - var(--d,0)*.2));filter:blur(calc(var(--d,0)*3px));opacity:calc(1 - var(--d,0)*.55);user-select:none}
+.lk-i img{width:100%;height:100%;object-fit:cover;pointer-events:none;box-shadow:0 22px 30px -20px rgba(0,0,0,.4)}
+.lk-nav{display:flex;align-items:center;gap:6px;font-size:10px;letter-spacing:.2em;color:#8b857b}
+.lk-nav button{background:none;border:0;font-size:20px;color:#16130f;padding:6px 10px;cursor:pointer}
+.lk-bar{flex:1;height:1px;background:#d8d3ca;margin:0 12px;position:relative}.lk-bar i{position:absolute;left:0;top:-.5px;height:2px;background:#16130f;transition:width .3s}
+.lk-side{border-left:1px solid #ddd8cf;padding-left:28px;display:flex;flex-direction:column}
+.lk-h{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.16em;text-transform:uppercase;padding:6px 0 16px}.lk-h span+span{color:#a39d92}
+.lk-p{display:grid;grid-template-columns:78px 1fr 20px;gap:16px;align-items:center;padding:14px 0;border-top:1px solid #ddd8cf;cursor:pointer}
+.lk-p .im{aspect-ratio:1;background:#fff;overflow:hidden}.lk-p img,.lk-p video{width:100%;height:100%;object-fit:cover}
+.lk-p small{display:block;font-size:9px;letter-spacing:.2em;color:#a39d92;text-transform:uppercase}.lk-p b{font:500 14px Montserrat,sans-serif;display:block;margin:3px 0}.lk-p span{font-size:13px}.lk-p i{font-style:normal;font-size:18px;color:#a39d92}
+.lk-t{display:flex;justify-content:space-between;align-items:baseline;border-top:1px solid #ddd8cf;padding:18px 0 14px;font-size:11px;letter-spacing:.14em;text-transform:uppercase}.lk-t b{font:500 20px 'Cormorant Garamond',serif;letter-spacing:0}
+.lk-b{background:#16130f;color:#fff;border:0;padding:18px 8px;font-size:10px;letter-spacing:.15em;text-transform:uppercase;cursor:pointer;width:100%}.lk-b:hover{background:#34291c}
+.lk-cur{position:fixed;left:0;top:0;width:76px;height:76px;margin:-38px 0 0 -38px;border:1px solid #16130f;border-radius:50%;display:grid;place-items:center;font-size:8px;letter-spacing:.2em;pointer-events:none;opacity:0;transition:opacity .2s,transform .15s;z-index:50;background:rgba(244,242,238,.7);color:#16130f}
+.lk-cur.on{opacity:1}.lk-cur.dn{transform:scale(.4);color:transparent;background:#16130f}
+@media(hover:none){.lk-cur{display:none}.lk-track{cursor:auto}}
+@media(max-width:820px){.lk-in{grid-template-columns:1fr}.lk-track{--w:56vw}.lk-side{border-left:0;padding:24px 0 0}}
 </style>
 </head>
 <body>
@@ -210,8 +235,37 @@ function renderMedia(src, type, autoplay=true){
   return `<img src="${esc(src)}" alt="Media">`;
 }
 
+let lkIdx=0,lkMv=0,editL=null;
+const shrink=(f,max)=>new Promise((res,rej)=>{const im=new Image(),u=URL.createObjectURL(f);im.onload=()=>{const k=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas'),x=c.getContext('2d');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);res(c.toDataURL('image/jpeg',.8))};im.onerror=rej;im.src=u});
+const toData=(f,max=1000)=>f.type.startsWith('image/')&&f.type!=='image/gif'?shrink(f,max):fileToBase64(f);
+const lkItems=l=>(l.items||[]).map(prod).filter(Boolean);
+const lkSide=i=>{const l=(D.looks||[])[i];if(!l)return'';const it=lkItems(l),tot=it.filter(p=>!p.so).reduce((a,p)=>a+p.p,0);
+  return `<div class="lk-h"><span>En este look</span><span>${it.length} artículos</span></div>${it.map(p=>`<div class="lk-p" data-a="prod" data-v="${p.id}"><div class="im">${renderMedia(p.img,p.mediaType)}</div><div><small>${esc(p.c)}${p.so?' · Agotado':''}</small><b>${esc(p.n)}</b><span>${money(p.p)}</span></div><i>+</i></div>`).join('')}<div class="lk-t"><span>Completa el look</span><b>${money(tot)}</b></div><button class="lk-b" data-a="lkbag" data-v="${i}">Agregar look completo a la bolsa →</button>`};
+const lookSection=()=>{const L=D.looks||[];if(!L.length)return'';if(lkIdx>=L.length)lkIdx=0;
+  return `<section class="lk" id="looks"><div class="lk-cur" id="lk-cur">ARRASTRAR</div><div class="lk-in"><div class="lk-stage"><div class="lk-t1">Arma tu look.</div><div class="lk-sub">Desliza para ver cada look · toca una prenda para verla</div><div class="lk-track" id="lk-track">${L.map((l,i)=>`<div class="lk-i" data-a="lkgo" data-v="${i}"><img src="${esc(l.img)}" alt="${esc(l.n)}" draggable="false"></div>`).join('')}</div><div class="lk-nav"><button data-a="lkprev" aria-label="Anterior">←</button><button data-a="lknext" aria-label="Siguiente">→</button><div class="lk-bar"><i id="lk-bar"></i></div><span id="lk-n"></span></div></div><aside class="lk-side" id="lk-side">${lkSide(lkIdx)}</aside></div></section>`};
+const lkTo=i=>{const t=$('#lk-track');if(!t)return;i=Math.max(0,Math.min(D.looks.length-1,i));const el=t.children[i];t.scrollTo({left:el.offsetLeft+el.offsetWidth/2-t.clientWidth/2,behavior:'smooth'})};
+function initLooks(){
+  const t=$('#lk-track');if(!t)return;
+  const its=[...t.children],cur=$('#lk-cur'),mid=el=>el.offsetLeft+el.offsetWidth/2-t.clientWidth/2;
+  const paint=()=>{const c=t.scrollLeft+t.clientWidth/2;let b=0,bd=1e9;
+    its.forEach((el,i)=>{const d=Math.abs(el.offsetLeft+el.offsetWidth/2-c);if(d<bd){bd=d;b=i}el.style.setProperty('--d',Math.min(1,d/(t.clientWidth*.42)).toFixed(3))});
+    if(b!==lkIdx){lkIdx=b;$('#lk-side').innerHTML=lkSide(b)}
+    const n=D.looks.length;$('#lk-n').textContent=String(lkIdx+1).padStart(2,'0')+' / '+String(n).padStart(2,'0')+(D.looks[lkIdx].n?' · '+D.looks[lkIdx].n:'');$('#lk-bar').style.width=((lkIdx+1)/n*100)+'%'};
+  t.style.scrollSnapType='none';t.scrollLeft=mid(its[lkIdx]);t.style.scrollSnapType='';paint();
+  let raf=0,dn=0,sx=0,sl=0;
+  t.addEventListener('scroll',()=>{cancelAnimationFrame(raf);raf=requestAnimationFrame(paint)},{passive:true});
+  t.addEventListener('pointerdown',e=>{if(e.pointerType!=='mouse')return;dn=1;lkMv=0;sx=e.clientX;sl=t.scrollLeft;t.classList.add('drag');cur.classList.add('dn')});
+  t.addEventListener('pointermove',e=>{if(e.pointerType!=='mouse')return;cur.style.left=e.clientX+'px';cur.style.top=e.clientY+'px';cur.classList.add('on');if(dn){lkMv=Math.max(lkMv,Math.abs(e.clientX-sx));t.scrollLeft=sl-(e.clientX-sx)}});
+  t.addEventListener('pointerleave',()=>cur.classList.remove('on'));
+  window.onpointerup=()=>{if(!dn)return;dn=0;t.classList.remove('drag');cur.classList.remove('dn')};
+}
+const lookAdmin=()=>{const l=editL;
+  if(l)return `<h2>${l.id?'Editar look':'Nuevo look'}</h2><label>Foto del look (modelo con el outfit completo)</label><div class="ph" style="max-width:180px;margin:6px 0">${renderMedia(l.img,'image',false)}</div><input type="file" id="f-look" accept="image/*"><label>Nombre del look</label><input id="l-n" value="${esc(l.n)}"><label>Artículos que incluye</label>${D.products.map(p=>`<label style="display:flex;gap:10px;align-items:center;text-transform:none;letter-spacing:0;margin:6px 0"><input type="checkbox" class="l-i" value="${p.id}" style="width:auto" ${l.items.includes(p.id)?'checked':''}>${esc(p.n)} · ${money(p.p)}</label>`).join('')}<div style="display:flex;gap:10px;margin-top:14px"><button class="btn" data-a="lsave">Guardar</button><button class="btn o" data-a="lcancel">Cancelar</button></div>`;
+  const L=D.looks||[];return `<button class="btn" style="max-width:240px;margin-bottom:20px" data-a="lnew">+ Nuevo look</button>`+(L.length?L.map(k=>`<div class="it"><div class="ph">${renderMedia(k.img,'image',false)}</div><div>${esc(k.n)}<div style="color:var(--mut);font-size:13px">${(k.items||[]).length} artículos</div></div><div><button class="sm" data-a="ledit" data-v="${k.id}">Editar</button><button class="sm" data-a="pdel" data-v="${k.id}">Borrar</button></div></div>`).join(''):'<p style="color:var(--mut)">Aún no hay looks. Crea uno con la foto del outfit y los artículos que lo componen.</p>')};
+
 function render(){
   $('#app').innerHTML=admin?renderAdmin():renderStore();
+  if(!admin)initLooks();
 }
 
 function renderStore(){
@@ -230,8 +284,9 @@ function renderStore(){
       <button class="btn" data-a="shop">Ver colección</button>
     </div>
   </section>
+  ${lookSection()}
   <h2 class="sec" id="col">La colección</h2>
-  <main class="grid">${list.length?list.map(p=>`<div class="card ${p.so?'so':''}" data-a="prod" data-v="${p.id}"><div class="ph">${renderMedia(p.img, p.mediaType)}${p.so?'<span class="tag">Agotado</span>':''}</div><h3>${esc(p.n)}</h3><div class="pr">${money(p.p)}</div></div>`).join(''):'<p style="grid-column:1/-1;text-align:center;color:var(--mut)">Próximamente nuevos artículos.</p>'}</main>
+  <main class="grid">${list.length?list.map(p=>`<div class="card ${p.so?'so':''}" data-a="prod" data-v="${p.id}"><div class="ph">${renderMedia(p.img, p.mediaType)}${p.so?'<span class="tag">Agotado</span>':''}</div><h3>${esc(p.n)}</h3><div class="pr">${money(p.p)}</div></div>`).join(''):`<p style="grid-column:1/-1;text-align:center;color:var(--mut)">${D.loaded?'Próximamente nuevos artículos.':'Cargando productos…'}</p>`}</main>
   <div class="trust"><div><b>Pago seguro</b><span>Transferencia o efectivo contra entrega</span></div><div><b>Atención personal</b><span>Te respondemos directo por WhatsApp</span></div></div>
   <footer><div class="logo">MARKITOS <span>MB</span></div><div>
   <a href="#" data-a="wa">WhatsApp</a>
@@ -286,8 +341,8 @@ const FB={addOrder:o=>LIVE?addDoc(collection(db,'orders'),o):0};
 const soft=()=>{const a=document.activeElement;if(!a||!a.matches('input,textarea,select'))render()};
 
 if(LIVE){
-  const app=initializeApp(firebaseConfig);db=getFirestore(app);au=getAuth(app);D.products=[];
-  onSnapshot(collection(db,'products'),s=>{D.products=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.t||0)-(a.t||0));soft()},()=>{});
+  const app=initializeApp(firebaseConfig);db=getFirestore(app);au=getAuth(app);D.products=[];D.looks=[];
+  onSnapshot(collection(db,'products'),s=>{const all=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.t||0)-(a.t||0));D.products=all.filter(x=>!x.look);D.looks=all.filter(x=>x.look);D.loaded=true;soft()},()=>{});
   onSnapshot(doc(db,'config','store'),s=>{if(s.exists()){D.cfg={...D.cfg,...s.data()};fixCats();soft()}},()=>{});
   onSnapshot(query(collection(db,'comments'),where('ok','==',true)),s=>{coms=s.docs.map(d=>(d.data())).sort((a,b)=>b.t-a.t);soft()},()=>{});
   let un=[];
@@ -303,10 +358,11 @@ function renderAdmin(){
     if(edit){const p=edit;b=`<h2>${p.id?'Editar artículo':'Nuevo artículo'}</h2><label>Multimedia del producto (Video o Imagen)</label><div class="ph" style="max-width:180px;margin:6px 0">${renderMedia(p.img, p.mediaType, false)}</div><input type="file" id="f-img" accept="image/*,video/*"><label>Nombre</label><input id="e-n" value="${esc(p.n)}"><label>Precio (MXN)</label><input id="e-p" type="number" min="0" value="${p.p}"><label>Categoría</label><select id="e-c">${c.cats.map(x=>`<option ${x===p.c?'selected':''}>${esc(x)}</option>`).join('')}</select><label>Descripción</label><textarea id="e-d" rows="4">${esc(p.d)}</textarea><label><input type="checkbox" id="e-s" style="width:auto;margin-right:8px" ${p.so?'checked':''}>Agotado</label><div style="display:flex;gap:10px;margin-top:14px"><button class="btn" data-a="psave">Guardar</button><button class="btn o" data-a="pcancel">Cancelar</button></div>`}
     else b=`<button class="btn" style="max-width:240px;margin-bottom:20px" data-a="pnew">+ Agregar producto</button>`+D.products.map(p=>`<div class="it"><div class="ph">${renderMedia(p.img, p.mediaType, false)}</div><div>${esc(p.n)}${p.so?' <small style="color:var(--gold)">(agotado)</small>':''}<div style="color:var(--mut);font-size:13px">${esc(p.c)} · ${money(p.p)}</div></div><div><button class="sm" data-a="pso" data-v="${p.id}">${p.so?'Disponible':'Agotar'}</button><button class="sm" data-a="pedit" data-v="${p.id}">Editar</button><button class="sm" data-a="pdel" data-v="${p.id}">Borrar</button></div></div>`).join('');
   }
+  if(tab==='looks')b=lookAdmin();
   if(tab==='orders')b=orders.length?orders.map((o,ix)=>`<div class="bank"><small>${new Date(o.at).toLocaleString('es-MX')}</small><br><b>${esc(o.name)}</b> · ${esc(o.phone)}<br><small><b>Dirección:</b> ${esc(o.address)}</small><br>${esc(o.notes||'')}<div style="margin:8px 0;white-space:pre-line">${esc(o.items)}</div><b>${money(o.total)}</b> · ${o.pay==='transfer'?'Transferencia':'Efectivo'}<br><button class="btn o" style="width:auto;padding:10px 18px;margin-top:12px" data-a="oprint" data-v="${ix}">Imprimir nota</button></div>`).join(''):'<p style="color:var(--mut)">Aún no hay pedidos.</p>';
   if(tab==='coms')b=allComs.length?allComs.map(k=>`<div class="com"><div style="color:var(--gold)">${'★'.repeat(k.stars||5)} <small>${k.ok?'(publicada)':'(pendiente)'}</small></div><b>${esc(k.name)}</b><div>${esc(k.text)}</div><button class="sm" data-a="cok" data-v="${k.id}" style="margin:6px 6px 0 0">${k.ok?'Ocultar':'Aprobar'}</button><button class="sm" data-a="cdel" data-v="${k.id}">Borrar</button></div>`).join(''):'<p style="color:var(--mut)">Aún no hay opiniones.</p>';
   if(tab==='cfg')b=`<h2>Portada de la Web</h2><label>Video o Imagen Principal de la Tienda</label><div class="ph" style="max-width:320px;height:180px;margin:6px 0">${renderMedia(c.heroMedia, c.heroMedia ? (c.heroMedia.includes('.mp4')?'video':'image') : 'image', false)}</div><input type="file" id="f-hero" accept="image/*,video/*"><h2 style="margin-top:30px">Ajustes Generales</h2><label>WhatsApp (52 + 10 dígitos)</label><input id="c-wa" value="${esc(waNum())}"><label>Banco</label><input id="c-bank" value="${esc(c.bank)}"><label>Titular</label><input id="c-holder" value="${esc(c.holder)}"><label>CLABE</label><input id="c-clabe" value="${esc(c.clabe)}"><label>Correo</label><input id="c-mail" value="${esc(c.mail)}"><label>Instagram (enlace)</label><input id="c-ig" value="${esc(c.ig)}"><label>Facebook (enlace)</label><input id="c-fb" value="${esc(c.fb)}"><label>TikTok (enlace)</label><input id="c-tt" value="${esc(c.tt)}"><label>Categorías (separadas por coma)</label><input id="c-cats" value="${esc(c.cats.join(', '))}"><button class="btn" data-a="csave">Guardar ajustes</button>`;
-  return `<header><button class="ib" data-a="exit" style="justify-self:start">← Tienda</button><div class="logo">ADMIN</div><button class="ib" data-a="logout">Salir</button></header><div class="adm"><div class="tabs">${[['prods','Productos'],['orders','Pedidos'],['coms','Opiniones'],['cfg','Ajustes']].map(t=>`<button class="${tab===t[0]?'on':''}" data-a="tab" data-v="${t[0]}">${t[1]}</button>`).join('')}</div>${b}</div>`;
+  return `<header><button class="ib" data-a="exit" style="justify-self:start">← Tienda</button><div class="logo">ADMIN</div><button class="ib" data-a="logout">Salir</button></header><div class="adm"><div class="tabs">${[['prods','Productos'],['looks','Looks'],['orders','Pedidos'],['coms','Opiniones'],['cfg','Ajustes']].map(t=>`<button class="${tab===t[0]?'on':''}" data-a="tab" data-v="${t[0]}">${t[1]}</button>`).join('')}</div>${b}</div>`;
 }
 
 const fileToBase64=f=>new Promise((resolve,reject)=>{
@@ -351,6 +407,16 @@ document.addEventListener('click',async e=>{
     else if(a==='pnew')edit={id:'',n:'',p:0,c:D.cfg.cats[0],d:'',img:'',so:false,mediaType:'image'};
     else if(a==='pedit')edit={...prod(v)};
     else if(a==='pcancel')edit=null;
+    else if(a==='lnew')editL={id:'',n:'',img:'',items:[]};
+    else if(a==='ledit')editL={...D.looks.find(l=>l.id===v)};
+    else if(a==='lcancel')editL=null;
+    else if(a==='lsave'){const l=editL;l.n=$('#l-n').value.trim();l.items=[...document.querySelectorAll('.l-i:checked')].map(x=>x.value);
+      if(!l.img){toast('Sube la foto del look');return}if(!l.items.length){toast('Elige al menos un artículo');return}
+      await setDoc(doc(db,'products',l.id||('l'+Date.now())),{look:true,n:l.n||'Look',img:l.img,items:l.items,t:l.t||Date.now(),p:0,c:'',d:'',so:false,mediaType:'image'});editL=null;toast('Look guardado')}
+    else if(a==='lkgo'){if(lkMv>6){lkMv=0;return}lkTo(+v);return}
+    else if(a==='lkprev'){lkTo(lkIdx-1);return}
+    else if(a==='lknext'){lkTo(lkIdx+1);return}
+    else if(a==='lkbag'){lkItems(D.looks[+v]).filter(p=>!p.so).forEach(p=>{cart[p.id]=(cart[p.id]||0)+1});save();view='cart';toast('Look agregado a la bolsa')}
     else if(a==='pso'){await updateDoc(doc(db,'products',v),{so:!prod(v).so});return}
     else if(a==='pdel'){if(confirm('¿Borrar este producto?'))await deleteDoc(doc(db,'products',v));return}
     else if(a==='psave'){const p=edit;p.n=$('#e-n').value.trim();p.p=Number($('#e-p').value)||0;p.c=$('#e-c').value;p.d=$('#e-d').value;p.so=$('#e-s').checked;
@@ -370,15 +436,19 @@ document.addEventListener('change',async e=>{
     toast('Procesando archivo…');
     const f=e.target.files[0];
     const type=f.type.startsWith('video/')?'video':'image';
-    const base64=await fileToBase64(f);
+    const base64=await toData(f);
     edit.img=base64;edit.mediaType=type;
     edit.n=$('#e-n').value;edit.p=Number($('#e-p').value)||0;edit.c=$('#e-c').value;edit.d=$('#e-d').value;edit.so=$('#e-s').checked;
     render();
   }
+  if(e.target.id==='f-look' && e.target.files[0]){
+    toast('Procesando foto…');editL.img=await toData(e.target.files[0],1100);
+    editL.n=$('#l-n').value;editL.items=[...document.querySelectorAll('.l-i:checked')].map(x=>x.value);render();
+  }
   if(e.target.id==='f-hero' && e.target.files[0]){
     toast('Subiendo multimedia de portada…');
     const f=e.target.files[0];
-    const base64=await fileToBase64(f);
+    const base64=await toData(f,1600);
     D.cfg.heroMedia=base64;
     await setDoc(doc(db,'config','store'),D.cfg);
     toast('Multimedia de portada actualizada');

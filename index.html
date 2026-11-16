@@ -131,6 +131,8 @@ footer .logo{color:#fff;margin-bottom:24px}
 }
 @media(hover:none){.qv{display:none}.card:hover{--ty:0}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+#pa{display:none}
+@media print{html,body{background:#fff!important}body>*:not(#pa){display:none!important}#pa{display:block!important;padding:10mm}#pa .np{box-shadow:none;width:150mm;max-width:100%;margin:0 auto}@page{margin:8mm}}
 </style>
 </head>
 <body>
@@ -207,10 +209,11 @@ const notaHtml=o=>`<div class="np"><div class="top"><div><div class="ti">Nota de
 <div class="tt"><div><span>TOTAL</span><b>${money(o.total)}</b></div></div><div class="gr">Gracias por tu preferencia</div></div>`;
 const orderObj=o=>({...o,list:o.list||String(o.items||'').split('\n').map(l=>{const m=l.match(/^•\s*(\d+)\s*x\s*(.+?)\s*—\s*\$([\d,.]+)/);return m?{q:+m[1],n:m[2],t:parseFloat(m[3].replace(/,/g,''))}:null}).filter(Boolean)});
 function printNota(o){
-  const f=document.createElement('iframe');f.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0';document.body.appendChild(f);
-  const d=f.contentWindow.document;d.open();
-  d.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Nota ${folioOf(o)}</title><link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&display=swap" rel="stylesheet"><style>body{margin:0;padding:10mm;background:#fff}${NOTA_CSS}.np{box-shadow:none;width:150mm;margin:0 auto}@page{margin:8mm}</style></head><body>${notaHtml(o)}</body></html>`);d.close();
-  setTimeout(()=>{try{f.contentWindow.focus();f.contentWindow.print()}catch(e){}setTimeout(()=>f.remove(),60000)},800);
+  let pa=$('#pa');if(!pa){pa=document.createElement('div');pa.id='pa';document.body.appendChild(pa)}
+  pa.innerHTML=notaHtml(o);
+  const clean=()=>{pa.innerHTML='';window.removeEventListener('afterprint',clean)};
+  window.addEventListener('afterprint',clean);
+  setTimeout(()=>window.print(),200);
 }
 async function makeNota(o){
   try{await Promise.all([document.fonts.load("600 40px 'Dancing Script'"),document.fonts.load("400 20px Arial")])}catch(e){}
@@ -375,7 +378,7 @@ if(LIVE){
   onSnapshot(query(collection(db,'comments'),where('ok','==',true)),s=>{coms=s.docs.map(d=>(d.data())).sort((a,b)=>b.t-a.t);soft()},()=>{});
   let un=[];
   onAuthStateChanged(au,u=>{user=u;un.forEach(f=>f());un=[];
-    if(u){un.push(onSnapshot(collection(db,'orders'),s=>{orders=s.docs.map(d=>d.data()).sort((a,b)=>b.at-a.at);soft()},()=>{}),onSnapshot(collection(db,'comments'),s=>{allComs=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>b.t-a.t);soft()},()=>{}))}
+    if(u){un.push(onSnapshot(collection(db,'orders'),s=>{orders=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>b.at-a.at);soft()},()=>{}),onSnapshot(collection(db,'comments'),s=>{allComs=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>b.t-a.t);soft()},()=>{}))}
     soft()});
 }
 
@@ -386,7 +389,7 @@ function renderAdmin(){
     if(edit){const p=edit;b=`<h2>${p.id?'Editar artículo':'Nuevo artículo'}</h2><label>Multimedia del producto (Video o Imagen)</label><div class="ph" style="max-width:180px;margin:6px 0">${renderMedia(p.img, p.mediaType, false)}</div><input type="file" id="f-img" accept="image/*,video/*"><label>Nombre</label><input id="e-n" value="${esc(p.n)}"><label>Precio (MXN)</label><input id="e-p" type="number" min="0" value="${p.p}"><label>Categoría</label><select id="e-c">${c.cats.map(x=>`<option ${x===p.c?'selected':''}>${esc(x)}</option>`).join('')}</select><label>Descripción</label><textarea id="e-d" rows="4">${esc(p.d)}</textarea><label><input type="checkbox" id="e-s" style="width:auto;margin-right:8px" ${p.so?'checked':''}>Agotado</label><div style="display:flex;gap:10px;margin-top:14px"><button class="btn" data-a="psave">Guardar</button><button class="btn o" data-a="pcancel">Cancelar</button></div>`}
     else b=`<button class="btn" style="max-width:240px;margin-bottom:20px" data-a="pnew">+ Agregar producto</button>`+D.products.map(p=>`<div class="it"><div class="ph">${renderMedia(p.img, p.mediaType, false)}</div><div>${esc(p.n)}${p.so?' <small style="color:var(--gold)">(agotado)</small>':''}<div style="color:var(--mut);font-size:13px">${esc(p.c)} · ${money(p.p)}</div></div><div><button class="sm" data-a="pso" data-v="${p.id}">${p.so?'Disponible':'Agotar'}</button><button class="sm" data-a="pedit" data-v="${p.id}">Editar</button><button class="sm" data-a="pdel" data-v="${p.id}">Borrar</button></div></div>`).join('');
   }
-  if(tab==='orders')b=orders.length?orders.map((o,ix)=>`<div class="bank"><small>${new Date(o.at).toLocaleString('es-MX')}</small><br><b>${esc(o.name)}</b> · ${esc(o.phone)}<br><small><b>Dirección:</b> ${esc(o.address)}</small><br>${esc(o.notes||'')}<div style="margin:8px 0;white-space:pre-line">${esc(o.items)}</div><b>${money(o.total)}</b> · ${o.pay==='transfer'?'Transferencia':'Efectivo'}<br><button class="btn o" style="width:auto;padding:10px 18px;margin-top:12px" data-a="oprint" data-v="${ix}">Imprimir nota</button></div>`).join(''):'<p style="color:var(--mut)">Aún no hay pedidos.</p>';
+  if(tab==='orders')b=orders.length?orders.map((o,ix)=>`<div class="bank"><small>${new Date(o.at).toLocaleString('es-MX')}</small><br><b>${esc(o.name)}</b> · ${esc(o.phone)}<br><small><b>Dirección:</b> ${esc(o.address)}</small><br>${esc(o.notes||'')}<div style="margin:8px 0;white-space:pre-line">${esc(o.items)}</div><b>${money(o.total)}</b> · ${o.pay==='transfer'?'Transferencia':'Efectivo'}<br><button class="btn o" style="width:auto;padding:10px 18px;margin-top:12px" data-a="oprint" data-v="${ix}">Imprimir nota</button><button class="btn o" style="width:auto;padding:10px 18px;margin:12px 0 0 8px;color:#e07b7b;border-color:#5a2e2e" data-a="odel" data-v="${o.id}">Eliminar</button></div>`).join(''):'<p style="color:var(--mut)">Aún no hay pedidos.</p>';
   if(tab==='coms')b=allComs.length?allComs.map(k=>`<div class="com"><div style="color:var(--gold)">${'★'.repeat(k.stars||5)} <small>${k.ok?'(publicada)':'(pendiente)'}</small></div><b>${esc(k.name)}</b><div>${esc(k.text)}</div><button class="sm" data-a="cok" data-v="${k.id}" style="margin:6px 6px 0 0">${k.ok?'Ocultar':'Aprobar'}</button><button class="sm" data-a="cdel" data-v="${k.id}">Borrar</button></div>`).join(''):'<p style="color:var(--mut)">Aún no hay opiniones.</p>';
   if(tab==='cfg')b=`<h2>Portada de la Web</h2><label>Video o Imagen Principal de la Tienda</label><div class="ph" style="max-width:320px;height:180px;margin:6px 0">${renderMedia(c.heroMedia, c.heroMedia ? (c.heroMedia.includes('.mp4')?'video':'image') : 'image', false)}</div><input type="file" id="f-hero" accept="image/*,video/*"><h2 style="margin-top:30px">Ajustes Generales</h2><label>WhatsApp (52 + 10 dígitos)</label><input id="c-wa" value="${esc(waNum())}"><label>Banco</label><input id="c-bank" value="${esc(c.bank)}"><label>Titular</label><input id="c-holder" value="${esc(c.holder)}"><label>CLABE</label><input id="c-clabe" value="${esc(c.clabe)}"><label>Correo</label><input id="c-mail" value="${esc(c.mail)}"><label>Instagram (enlace)</label><input id="c-ig" value="${esc(c.ig)}"><label>Facebook (enlace)</label><input id="c-fb" value="${esc(c.fb)}"><label>TikTok (enlace)</label><input id="c-tt" value="${esc(c.tt)}"><label>Costo de envío nacional (MXN, 0 = por confirmar)</label><input id="c-ship" type="number" min="0" value="${Number(c.ship)||0}"><label>Envío gratis desde (MXN, 0 = nunca)</label><input id="c-shipfree" type="number" min="0" value="${Number(c.shipFree)||0}"><label>Estados con pago contra entrega (separados por coma; vacío = todos)</label><input id="c-cod" value="${esc(c.cod)}"><label>Categorías (separadas por coma)</label><input id="c-cats" value="${esc(c.cats.join(', '))}"><button class="btn" data-a="csave">Guardar ajustes</button><h2 style="margin-top:40px">Optimizar fotos</h2><p style="color:var(--mut);font-size:13px">Convierte las fotos que subiste antes en versiones ligeras para que la tienda cargue más rápido. Hazlo una sola vez.</p><button class="btn o" style="max-width:280px" data-a="migr">Optimizar fotos anteriores</button>`;
   return `<header><button class="ib" data-a="exit" style="justify-self:start">← Tienda</button><div class="logo">ADMIN</div><button class="ib" data-a="logout">Salir</button></header><div class="adm"><div class="tabs">${[['prods','Productos'],['orders','Pedidos'],['coms','Opiniones'],['cfg','Ajustes']].map(t=>`<button class="${tab===t[0]?'on':''}" data-a="tab" data-v="${t[0]}">${t[1]}</button>`).join('')}</div>${b}</div>`;
@@ -409,6 +412,7 @@ document.addEventListener('click',async e=>{
     else if(a==='sharenota'){shareNota();return}
     else if(a==='printnota'){printNota(lastOrder);return}
     else if(a==='oprint'){printNota(orderObj(orders[+v]));return}
+    else if(a==='odel'){const o=orders.find(x=>x.id===v);if(o&&confirm('¿Eliminar el pedido de '+o.name+'? Esta acción no se puede deshacer.'))await deleteDoc(doc(db,'orders',v));return}
     else if(a==='shop'){$('#col').scrollIntoView({behavior:'smooth'});return}
     else if(a==='home'){cat='Todo';view=null}
     else if(a==='cat')cat=v;

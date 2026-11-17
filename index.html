@@ -188,6 +188,7 @@ header,footer,.cats,.trust{border-color:#3a4a66;box-shadow:0 1px 16px -6px rgba(
 input,select,textarea{background:#000;border-color:#3a4a66}
 input:focus,select:focus,textarea:focus{border-color:#fff;box-shadow:0 0 12px rgba(190,215,255,.8)}
 .stars .on{color:#fff;text-shadow:0 0 10px rgba(190,215,255,.95)}
+.card{will-change:auto}.card:hover{will-change:transform}
 /* ===== Logos de redes sociales ===== */
 .ic{width:1.35em;height:1.35em;vertical-align:-.3em;margin-right:9px;fill:currentColor;flex:none;filter:drop-shadow(0 0 3px rgba(215,230,255,.9)) drop-shadow(0 0 8px rgba(140,185,255,.6))}
 .ic.s{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
@@ -206,7 +207,7 @@ footer a:hover .ic,.wa:hover .ic,label:hover .ic{animation:brinco .75s cubic-bez
 <script type="application/json" id="data">{"cfg":{"wa":"","bank":"Tu banco","holder":"Nombre del titular","clabe":"000000000000000000","ig":"","fb":"","tt":"","mail":"","cats":["Ropa","Calzado","Perfumes","Belleza","Accesorios"],"heroMedia":"","ship":0,"shipFree":0,"codEstados":"","sname":"ALFA","saddr":""},"products":[{"id":"p1","n":"Perfume Noir Absolu","p":1890,"c":"Perfumes","d":"Fragancia amaderada con notas de oud, vainilla y ámbar. Frasco de 100 ml.","img":"","so":false,"mediaType":"image"},{"id":"p2","n":"Blazer Carbón Slim","p":2450,"c":"Ropa","d":"Blazer entallado en tejido ligero, forro de satén y botones dorados.","img":"","so":false,"mediaType":"image"},{"id":"p3","n":"Collar Champán","p":980,"c":"Accesorios","d":"Cadena fina bañada en oro champán, cierre de seguridad.","img":"","so":true,"mediaType":"image"}]}</script>
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import{getFirestore,initializeFirestore,persistentLocalCache,persistentMultipleTabManager,getDoc,collection,doc,onSnapshot,query,where,addDoc,setDoc,updateDoc,deleteDoc}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import{getFirestore,initializeFirestore,persistentLocalCache,persistentMultipleTabManager,getDoc,collection,doc,onSnapshot,query,where,addDoc,setDoc,updateDoc,deleteDoc,getDocs,orderBy,limit,startAfter,documentId}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import{getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const firebaseConfig={apiKey:"AIzaSyBzlFbM2AtoBBqVTVTKyemVlDeY38ME870",authDomain:"markitos-mb.firebaseapp.com",projectId:"markitos-mb",storageBucket:"markitos-mb.firebasestorage.app",messagingSenderId:"829003658332",appId:"1:829003658332:web:0891af6a892a5fd7c22299"};
@@ -231,8 +232,11 @@ const money=n=>'$'+Number(n||0).toLocaleString('es-MX',{minimumFractionDigits:2}
 let D=JSON.parse($('#data').textContent),cart={},cat='Todo',view=null,pay='transfer',done=null,
     admin=location.hash===ADMIN_HASH,tab='prods',edit=null,orders=[];
 try{cart=JSON.parse(localStorage.getItem('alfa-cart')||'{}')}catch(e){}
-const save=()=>{try{localStorage.setItem('alfa-cart',JSON.stringify(cart))}catch(e){}};
-const prod=id=>D.products.find(p=>p.id===id);
+const PM={},PG={},PAGE=12;D.products.forEach(p=>PM[p.id]=p);
+let cartP={};try{cartP=JSON.parse(localStorage.getItem('alfa-cartp')||'{}')}catch(e){}
+const save=()=>{try{Object.keys(cartP).forEach(k=>{if(!cart[k])delete cartP[k]});localStorage.setItem('alfa-cart',JSON.stringify(cart));localStorage.setItem('alfa-cartp',JSON.stringify(cartP))}catch(e){}};
+const slim=p=>({id:p.id,n:p.n,p:p.p,c:p.c,so:p.so,mediaType:p.mediaType,img:p.mediaType==='video'?'':p.img});
+const prod=id=>PM[id]||cartP[id];
 const items=()=>Object.keys(cart).map(id=>({p:prod(id),q:cart[id]})).filter(i=>i.p&&!i.p.so);
 const total=()=>items().reduce((s,i)=>s+i.p.p*i.q,0);
 const count=()=>items().reduce((s,i)=>s+i.q,0);
@@ -347,11 +351,11 @@ function renderMedia(src, type, autoplay=true){
   if(type === 'video' || src.startsWith('data:video/') || src.includes('.mp4') || src.includes('.mov')){
     return `<video src="${esc(src)}" ${autoplay?'autoplay loop muted playsinline':''}>` + (autoplay ? '' : 'controls') + `</video>`;
   }
-  return `<img src="${esc(src)}" alt="Media">`;
+  return `<img src="${esc(src)}" alt="Media" loading="lazy" decoding="async">`;
 }
 
 let lastCnt=-1;setTimeout(()=>{D.intro=false},3000);
-let sy=0;addEventListener('scroll',()=>{if(sy)return;sy=requestAnimationFrame(()=>{document.documentElement.style.setProperty('--sy',Math.min(scrollY,900));sy=0})},{passive:true});
+let sy=0;addEventListener('scroll',()=>{if(sy)return;sy=requestAnimationFrame(()=>{const h=$('.hero');if(h&&scrollY<1100)h.style.setProperty('--sy',Math.min(scrollY,900));sy=0})},{passive:true});
 if(matchMedia('(hover:hover)').matches){
   document.addEventListener('pointermove',e=>{const ph=e.target.closest&&e.target.closest('.card .ph');if(!ph)return;
     const r=ph.getBoundingClientRect(),x=(e.clientX-r.left)/r.width,y=(e.clientY-r.top)/r.height,c=ph.parentElement;
@@ -360,30 +364,54 @@ if(matchMedia('(hover:hover)').matches){
   document.addEventListener('pointerout',e=>{const c=e.target.closest&&e.target.closest('.card');if(c&&!c.contains(e.relatedTarget)){c.style.removeProperty('--rx');c.style.removeProperty('--ry')}});
 }
 const shrink=(f,max,q=.8)=>new Promise((res,rej)=>{const im=new Image(),u=URL.createObjectURL(f);im.onload=()=>{const k=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas'),x=c.getContext('2d');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);res(c.toDataURL('image/jpeg',q))};im.onerror=rej;im.src=u});
-const toData=(f,max=1000)=>f.type.startsWith('image/')&&f.type!=='image/gif'?shrink(f,max):fileToBase64(f);
+const toData=(f,max=1000)=>f.type.startsWith('image/')&&f.type!=='image/gif'?shrink(f,max,.72):fileToBase64(f);
 const ESTADOS=['Aguascalientes','Baja California','Baja California Sur','Campeche','Chiapas','Chihuahua','Ciudad de México','Coahuila','Colima','Durango','Estado de México','Guanajuato','Guerrero','Hidalgo','Jalisco','Michoacán','Morelos','Nayarit','Nuevo León','Oaxaca','Puebla','Querétaro','Quintana Roo','San Luis Potosí','Sinaloa','Sonora','Tabasco','Tamaulipas','Tlaxcala','Veracruz','Yucatán','Zacatecas'];
 let shipState='';const FIDS=['f-n','f-t','f-e','f-c','f-a','f-o'];
 const codOk=e=>{const l=String(D.cfg.codEstados||'').split(',').map(x=>x.trim().toLowerCase()).filter(Boolean);return !l.length||l.includes(String(e||'').toLowerCase())};
 const shipCost=()=>{const c=D.cfg,s=Number(c.ship)||0;return !s||(Number(c.shipFree)>0&&total()>=Number(c.shipFree))?0:s};
 const keepForm=fn=>{const v=FIDS.map(i=>$('#'+i)?$('#'+i).value:'');fn();render();FIDS.forEach((i,k)=>{if($('#'+i))$('#'+i).value=v[k]})};
-const toPair=async f=>f.type.startsWith('image/')&&f.type!=='image/gif'?{thumb:await shrink(f,480,.72),full:await shrink(f,1100,.8)}:null;
+const toPair=async f=>f.type.startsWith('image/')&&f.type!=='image/gif'?{thumb:await shrink(f,360,.68),full:await shrink(f,1000,.78)}:null;
 const FULL={};
 async function loadFull(id){const p=prod(id);if(!p||!p.hf||FULL[id]||!LIVE)return;
   try{const s=await getDoc(doc(db,'images',id));if(s.exists())FULL[id]=s.data().d}catch(e){return}
   const im=document.querySelector('.md .ph img');if(im&&FULL[id]&&view==='p:'+id)im.src=FULL[id]}
 async function migrate(){let n=0;
   for(const p of D.products){if(p.hf||!p.img||!p.img.startsWith('data:image'))continue;
-    try{const b=await (await fetch(p.img)).blob(),th=await shrink(b,480,.72),fu=await shrink(b,1100,.8);
+    try{const b=await (await fetch(p.img)).blob(),th=await shrink(b,360,.68),fu=await shrink(b,1000,.78);
       await setDoc(doc(db,'images',p.id),{d:fu});await updateDoc(doc(db,'products',p.id),{img:th,hf:true});n++;toast('Optimizando fotos… '+n)}
     catch(x){toast('No se pudo guardar. Revisa las reglas de Firebase (colección images).');return}}
   toast(n?'Listo: '+n+' fotos optimizadas':'No hay fotos pendientes')}
+function curList(k=cat){if(!LIVE)return D.products.filter(p=>k==='Todo'||p.c===k);const g=PG[k];return g?g.ids.map(id=>PM[id]).filter(Boolean):[]}
+function moreBtn(k=cat){const g=PG[k];return LIVE&&g&&!g.done&&g.ids.length?`<div style="text-align:center;padding:0 20px 60px"><button class="btn o" style="max-width:260px;margin:0 auto" data-a="more"${g.busy?' disabled':''}>${g.busy?'Cargando…':'Ver más productos'}</button></div>`:''}
+async function loadMore(k=cat){
+  const g=PG[k]||(PG[k]={ids:[],last:null,done:false,busy:false});
+  if(g.busy||g.done)return;g.busy=true;soft();
+  try{
+    const q=[collection(db,'products')];
+    if(k!=='Todo')q.push(where('c','==',k));
+    q.push(orderBy(documentId(),'desc'));
+    if(g.last)q.push(startAfter(g.last));
+    q.push(limit(PAGE));
+    const s=await getDocs(query(...q));
+    s.docs.forEach(d=>{PM[d.id]={id:d.id,...d.data()};if(!g.ids.includes(d.id))g.ids.push(d.id)});
+    if(s.docs.length)g.last=s.docs[s.docs.length-1];
+    if(s.docs.length<PAGE)g.done=true;
+  }catch(e){g.done=true;toast('No se pudieron cargar los productos')}
+  g.busy=false;soft();
+}
+function resetPG(){Object.keys(PG).forEach(k=>delete PG[k]);loadMore('Todo');if(cat!=='Todo')loadMore(cat)}
+let comsAt=0;
+async function loadComs(){if(!LIVE||Date.now()-comsAt<300000)return;comsAt=Date.now();
+  try{const s=await getDocs(query(collection(db,'comments'),where('ok','==',true),limit(30)));coms=s.docs.map(d=>d.data()).sort((a,b)=>b.t-a.t);soft()}catch(e){comsAt=0}}
+async function refreshCart(){if(!LIVE)return;
+  await Promise.all(Object.keys(cart).map(async id=>{try{const s=await getDoc(doc(db,'products',id));if(s.exists()){PM[id]={id,...s.data()};cartP[id]=slim(PM[id])}else{delete cart[id];delete cartP[id]}}catch(e){}}));save()}
 function render(){
   $('#app').innerHTML=admin?renderAdmin():renderStore();
 }
 
 function renderStore(){
   const cnt=count();if(lastCnt<0)lastCnt=cnt;const bump=cnt>lastCnt;lastCnt=cnt;
-  const cs=['Todo',...D.cfg.cats],list=D.products.filter(p=>cat==='Todo'||p.c===cat),c=D.cfg;
+  const cs=['Todo',...D.cfg.cats],list=curList(),c=D.cfg;
   const isVideoHero = c.heroMedia && (c.heroMedia.startsWith('data:video/') || c.heroMedia.includes('.mp4') || c.heroMedia.includes('.mov'));
   
   return `<header><span></span><div class="logo" data-a="home">ALFA</div><button class="ib ${bump?'bump':''}" data-a="cart">Bolsa (${count()})</button></header>
@@ -399,7 +427,7 @@ function renderStore(){
     </div>
   </section>
   <h2 class="sec" id="col">La colección</h2>
-  <main class="grid">${list.length?list.map(p=>`<div class="card ${p.so?'so':''}" data-a="prod" data-v="${p.id}"><div class="ph">${renderMedia(p.img, p.mediaType)}${p.so?'<span class="tag">Agotado</span>':'<span class="qv">Ver producto</span>'}</div><h3>${esc(p.n)}</h3><div class="pr">${money(p.p)}</div></div>`).join(''):`<p style="grid-column:1/-1;text-align:center;color:var(--mut)">${D.loaded?'Próximamente nuevos artículos.':'Cargando productos…'}</p>`}</main>
+  <main class="grid">${list.length?list.map(p=>`<div class="card ${p.so?'so':''}" data-a="prod" data-v="${p.id}"><div class="ph">${renderMedia(p.img, p.mediaType)}${p.so?'<span class="tag">Agotado</span>':'<span class="qv">Ver producto</span>'}</div><h3>${esc(p.n)}</h3><div class="pr">${money(p.p)}</div></div>`).join(''):`<p style="grid-column:1/-1;text-align:center;color:var(--mut)">${(!LIVE||(PG[cat]&&!PG[cat].busy))?'Próximamente nuevos artículos.':'Cargando productos…'}</p>`}</main>${moreBtn()}
   <div class="trust"><div><b>Pago seguro</b><span>Transferencia o efectivo contra entrega</span></div><div><b>Atención personal</b><span>Te respondemos directo por WhatsApp</span></div></div>
   <footer><div class="logo">ALFA</div><div>
   <a href="#" data-a="wa">${IC.wa}WhatsApp</a>
@@ -462,15 +490,14 @@ const armIdle=()=>{clearTimeout(idle);if(user)idle=setTimeout(()=>{if(au)signOut
 
 if(LIVE){
   const app=initializeApp(firebaseConfig);try{db=initializeFirestore(app,{localCache:persistentLocalCache({tabManager:persistentMultipleTabManager()})})}catch(e){db=getFirestore(app)}au=getAuth(app);D.products=[];
-  onSnapshot(collection(db,'products'),s=>{D.products=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.t||0)-(a.t||0));D.loaded=true;soft()},()=>{});
+  Object.keys(PM).forEach(k=>delete PM[k]);loadMore('Todo');
   onSnapshot(doc(db,'config','store'),s=>{if(s.exists()){D.cfg={...D.cfg,...s.data()};fixCats();soft()}},()=>{});
-  onSnapshot(query(collection(db,'comments'),where('ok','==',true)),s=>{coms=s.docs.map(d=>(d.data())).sort((a,b)=>b.t-a.t);soft()},()=>{});
   let un=[];
   onAuthStateChanged(au,u=>{
     /* Solo el correo del administrador puede mantener sesión */
     if(u&&!ADMIN_EMAILS.map(x=>x.toLowerCase()).includes((u.email||'').toLowerCase())){signOut(au);toast('Acceso no autorizado');return}
     user=u;armIdle();un.forEach(f=>f());un=[];
-    if(u){un.push(onSnapshot(collection(db,'orders'),s=>{orders=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>b.at-a.at);soft()},()=>{}),onSnapshot(collection(db,'comments'),s=>{allComs=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>b.t-a.t);soft()},()=>{}))}
+    if(u){un.push(onSnapshot(query(collection(db,'orders'),orderBy('at','desc'),limit(50)),s=>{orders=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>b.at-a.at);soft()},()=>{}),onSnapshot(query(collection(db,'comments'),orderBy('t','desc'),limit(100)),s=>{allComs=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>b.t-a.t);soft()},()=>{}))}
     soft()});
 }
 
@@ -479,7 +506,7 @@ function renderAdmin(){
   const c=D.cfg;let b='';
   if(tab==='prods'){
     if(edit){const p=edit;b=`<h2>${p.id?'Editar artículo':'Nuevo artículo'}</h2><label>Multimedia del producto (Video o Imagen)</label><div class="ph" style="max-width:180px;margin:6px 0">${renderMedia(p.img, p.mediaType, false)}</div><input type="file" id="f-img" accept="image/*,video/*"><label>Nombre</label><input id="e-n" value="${esc(p.n)}"><label>Precio (MXN)</label><input id="e-p" type="number" min="0" value="${p.p}"><label>Categoría</label><select id="e-c">${c.cats.map(x=>`<option ${x===p.c?'selected':''}>${esc(x)}</option>`).join('')}</select><label>Descripción</label><textarea id="e-d" rows="4">${esc(p.d)}</textarea><label><input type="checkbox" id="e-s" style="width:auto;margin-right:8px" ${p.so?'checked':''}>Agotado</label><div style="display:flex;gap:10px;margin-top:14px"><button class="btn" data-a="psave">Guardar</button><button class="btn o" data-a="pcancel">Cancelar</button></div>`}
-    else b=`<button class="btn" style="max-width:240px;margin-bottom:20px" data-a="pnew">+ Agregar producto</button>`+D.products.map(p=>`<div class="it"><div class="ph">${renderMedia(p.img, p.mediaType, false)}</div><div>${esc(p.n)}${p.so?' <small style="color:var(--gold)">(agotado)</small>':''}<div style="color:var(--mut);font-size:13px">${esc(p.c)} · ${money(p.p)}</div></div><div><button class="sm" data-a="pso" data-v="${p.id}">${p.so?'Disponible':'Agotar'}</button><button class="sm" data-a="pedit" data-v="${p.id}">Editar</button><button class="sm" data-a="pdel" data-v="${p.id}">Borrar</button></div></div>`).join('');
+    else b=`<button class="btn" style="max-width:240px;margin-bottom:20px" data-a="pnew">+ Agregar producto</button>`+curList('Todo').map(p=>`<div class="it"><div class="ph">${renderMedia(p.img, p.mediaType, false)}</div><div>${esc(p.n)}${p.so?' <small style="color:var(--gold)">(agotado)</small>':''}<div style="color:var(--mut);font-size:13px">${esc(p.c)} · ${money(p.p)}</div></div><div><button class="sm" data-a="pso" data-v="${p.id}">${p.so?'Disponible':'Agotar'}</button><button class="sm" data-a="pedit" data-v="${p.id}">Editar</button><button class="sm" data-a="pdel" data-v="${p.id}">Borrar</button></div></div>`).join('')+moreBtn('Todo');
   }
   if(tab==='orders')b=orders.length?orders.map((o,ix)=>`<div class="bank"><small>${new Date(o.at).toLocaleString('es-MX')}</small><br><b>${esc(o.name)}</b> · ${esc(o.phone)}<br><small><b>Dirección:</b> ${esc(o.address)}</small><br>${esc(o.notes||'')}<div style="margin:8px 0;white-space:pre-line">${esc(o.items)}</div><b>${money(o.total)}</b> · ${o.pay==='transfer'?'Transferencia':'Pago al entregar'}<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="btn o" style="width:auto;padding:10px 16px" data-a="oprint" data-v="${ix}">Imprimir nota</button><button class="btn" style="width:auto;padding:10px 16px" data-a="olabel" data-v="${ix}">Imprimir etiqueta</button><button class="btn o" style="width:auto;padding:10px 16px;color:#e07b7b;border-color:#5a2e2e" data-a="odel" data-v="${o.id}">Eliminar</button></div></div>`).join(''):'<p style="color:var(--mut)">Aún no hay pedidos.</p>';
   if(tab==='coms')b=allComs.length?allComs.map(k=>`<div class="com"><div style="color:var(--gold)">${'★'.repeat(k.stars||5)} <small>${k.ok?'(publicada)':'(pendiente)'}</small></div><b>${esc(k.name)}</b><div>${esc(k.text)}</div><button class="sm" data-a="cok" data-v="${k.id}" style="margin:6px 6px 0 0">${k.ok?'Ocultar':'Aprobar'}</button><button class="sm" data-a="cdel" data-v="${k.id}">Borrar</button></div>`).join(''):'<p style="color:var(--mut)">Aún no hay opiniones.</p>';
@@ -506,21 +533,22 @@ document.addEventListener('click',async e=>{
     else if(a==='oprint'){printNota(orderObj(orders[+v]));return}
     else if(a==='olabel'){printLabel(orderObj(orders[+v]));return}
     else if(a==='odel'){const o=orders.find(x=>x.id===v);if(o&&confirm('¿Eliminar el pedido de '+o.name+'? Esta acción no se puede deshacer.'))await deleteDoc(doc(db,'orders',v));return}
+    else if(a==='more'){loadMore(admin?'Todo':cat);return}
     else if(a==='shop'){$('#col').scrollIntoView({behavior:'smooth'});return}
     else if(a==='home'){cat='Todo';view=null}
-    else if(a==='cat')cat=v;
+    else if(a==='cat'){cat=v;if(LIVE&&!PG[v])loadMore(v)}
     else if(a==='prod'){view='p:'+v;loadFull(v)}
     else if(a==='cart')view='cart';
-    else if(a==='com')view='com';
+    else if(a==='com'){view='com';loadComs()}
     else if(a==='close')view=null;
     else if(a==='star'){star=+v;document.querySelectorAll('.stars button').forEach((b,i)=>b.className=i<star?'on':'');return}
     else if(a==='csend'){const n=$('#k-n').value.trim(),t=$('#k-t').value.trim();if(!n||!t){toast('Escribe tu nombre y comentario');return}
       await addDoc(collection(db,'comments'),{name:n.slice(0,40),text:t.slice(0,400),stars:star,ok:false,t:Date.now()});toast('¡Gracias! Tu opinión se publicará al ser revisada');view=null}
-    else if(a==='add'){cart[v]=(cart[v]||0)+1;save();view='cart';toast('Agregado a la bolsa')}
+    else if(a==='add'){cart[v]=(cart[v]||0)+1;if(PM[v])cartP[v]=slim(PM[v]);save();view='cart';toast('Agregado a la bolsa')}
     else if(a==='inc'){cart[v]++;save()}
     else if(a==='dec'){cart[v]--;if(cart[v]<1)delete cart[v];save()}
     else if(a==='del'){delete cart[v];save()}
-    else if(a==='checkout'){view='checkout';shipState=''}
+    else if(a==='checkout'){await refreshCart();view='checkout';shipState=''}
     else if(a==='pay'){if(v==='cash'&&shipState&&!codOk(shipState)){toast('El pago al entregar solo está disponible en: '+D.cfg.codEstados);return}keepForm(()=>{pay=v});return}
     else if(a==='copy'){try{await navigator.clipboard.writeText(D.cfg.clabe);toast('CLABE copiada')}catch(x){toast('Copia el número manualmente')}return}
     else if(a==='confirm'){await confirmOrder();return}
@@ -535,14 +563,14 @@ document.addEventListener('click',async e=>{
     else if(a==='pnew')edit={id:'',n:'',p:0,c:D.cfg.cats[0],d:'',img:'',so:false,mediaType:'image'};
     else if(a==='pedit')edit={...prod(v)};
     else if(a==='pcancel')edit=null;
-    else if(a==='pso'){await updateDoc(doc(db,'products',v),{so:!prod(v).so});return}
-    else if(a==='pdel'){if(confirm('¿Borrar este producto?')){await deleteDoc(doc(db,'products',v));deleteDoc(doc(db,'images',v)).catch(()=>{})}return}
+    else if(a==='pso'){const p0=PM[v];await updateDoc(doc(db,'products',v),{so:!p0.so});p0.so=!p0.so;render();return}
+    else if(a==='pdel'){if(confirm('¿Borrar este producto?')){await deleteDoc(doc(db,'products',v));deleteDoc(doc(db,'images',v)).catch(()=>{});Object.values(PG).forEach(g=>{g.ids=g.ids.filter(x=>x!==v)});delete PM[v];render()}return}
     else if(a==='psave'){const p=edit;p.n=$('#e-n').value.trim();p.p=Number($('#e-p').value)||0;p.c=$('#e-c').value;p.d=$('#e-d').value;p.so=$('#e-s').checked;
       if(!p.n){toast('Escribe el nombre');return}
       const id=p.id||('p'+Date.now());let hf=p.hf||false,img=p.img||'';
       if(p.full){try{await setDoc(doc(db,'images',id),{d:p.full});hf=true}catch(x){hf=false;img=p.full;toast('Guardado sin fotos separadas: actualiza las reglas de Firebase')}}
       if(p.mediaType==='video')hf=false;
-      await setDoc(doc(db,'products',id),{n:p.n,p:p.p,c:p.c,d:p.d,img,so:p.so,mediaType:p.mediaType||'image',hf,t:p.t||Date.now()});edit=null;toast('Guardado')}
+      const dat={n:p.n,p:p.p,c:p.c,d:p.d,img,so:p.so,mediaType:p.mediaType||'image',hf,t:p.t||Date.now()};await setDoc(doc(db,'products',id),dat);PM[id]={id,...dat};delete FULL[id];resetPG();edit=null;toast('Guardado')}
     else if(a==='migr'){await migrate();return}
     else if(a==='cok'){await updateDoc(doc(db,'comments',v),{ok:!allComs.find(k=>k.id===v).ok});return}
     else if(a==='cdel'){await deleteDoc(doc(db,'comments',v));return}
@@ -558,6 +586,7 @@ document.addEventListener('change',async e=>{
   if(e.target.id==='f-img' && e.target.files[0]){
     toast('Procesando archivo…');
     const f=e.target.files[0];
+    if(f.type.startsWith('video/')&&f.size>700000){toast('Video muy pesado (máx. ~700 KB). Usa una imagen o un video más corto.');e.target.value='';return}
     const type=f.type.startsWith('video/')?'video':'image';
     const pr=await toPair(f);
     if(pr){edit.img=pr.thumb;edit.full=pr.full}else{edit.img=await fileToBase64(f);edit.full=null}
@@ -568,6 +597,7 @@ document.addEventListener('change',async e=>{
   if(e.target.id==='f-hero' && e.target.files[0]){
     toast('Subiendo multimedia de portada…');
     const f=e.target.files[0];
+    if(f.type.startsWith('video/')&&f.size>700000){toast('Video muy pesado (máx. ~700 KB). Usa una imagen o un video más corto.');e.target.value='';return}
     const base64=await toData(f,1600);
     D.cfg.heroMedia=base64;
     await setDoc(doc(db,'config','store'),D.cfg);

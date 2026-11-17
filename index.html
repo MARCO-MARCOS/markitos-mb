@@ -194,6 +194,11 @@ input:focus,select:focus,textarea:focus{border-color:#fff;box-shadow:0 0 12px rg
 label .ic{width:1.5em;height:1.5em;margin-right:10px}
 footer a .ic{margin-right:8px}
 .wa .ic{filter:none;margin-right:8px}
+footer a{display:inline-flex;align-items:center}
+footer a .ic{width:1.7em;height:1.7em;margin-right:10px}
+.ic{transform-origin:50% 50%}
+@keyframes brinco{0%{transform:translateY(0) rotate(0)}35%{transform:translateY(-9px) rotate(180deg)}70%{transform:translateY(0) rotate(360deg)}85%{transform:translateY(-3px) rotate(360deg)}100%{transform:translateY(0) rotate(360deg)}}
+footer a:hover .ic,.wa:hover .ic,label:hover .ic{animation:brinco .75s cubic-bezier(.3,.7,.3,1)}
 </style>
 </head>
 <body>

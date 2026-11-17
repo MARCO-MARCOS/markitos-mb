@@ -145,42 +145,49 @@ footer .logo{color:#fff;margin-bottom:24px}
 @media print{#pa .lb{margin:0}}
 @media print{html,body{background:#fff!important}body>*:not(#pa){display:none!important}#pa{display:block!important;padding:10mm}#pa .np{box-shadow:none;width:150mm;max-width:100%;margin:0 auto}@page{margin:8mm}}
 
-/* ===== ALFA · Negro y plata neón ===== */
-:root{--bg:#050505;--bg2:#0d0d0d;--line:#252e3b;--gold2:#FFFFFF;--gold3:#7C8BA3}
-.logo,.hero h1{background:linear-gradient(110deg,var(--gold3),var(--gold2) 45%,var(--gold) 60%,var(--gold3));-webkit-background-clip:text;background-clip:text;color:transparent}
-footer .logo{color:transparent}
-.btn{background:linear-gradient(135deg,var(--gold3),var(--gold),var(--gold2));color:#000}
-.btn:hover{background:var(--gold2);border-color:var(--gold2)}
-.hero{background:radial-gradient(ellipse at 50% 0,#0d1522,#000 70%)}
-.hero i{width:120px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
-.sec:after{width:80px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
-header,footer,.ph,.md,.dr,.bank{border-color:#2f3b4d}
-.wa{background:var(--gold);color:#000;animation:none}
+/* ===== ALFA · Negro + plata neón brillante ===== */
+:root{
+  --bg:#000;--bg2:#070707;--foot:#000;--line:#2a3345;
+  --gold:#E8F0FF;--gold2:#FFFFFF;--gold3:#9FB2D0;
+  --ink:#F4F8FF;--mut:#B8C6DA;--silver:#F2F7FF;
+  --glow:0 0 2px #fff,0 0 8px rgba(215,230,255,.95),0 0 22px rgba(140,185,255,.75),0 0 46px rgba(100,150,255,.45);
+  --glowbox:0 0 8px rgba(215,230,255,.7),0 0 24px rgba(140,185,255,.45),inset 0 0 10px rgba(200,220,255,.12);
+}
+body{background:#000;color:var(--ink)}
+.hero{background:radial-gradient(ellipse at 50% 0,#10192b,#000 70%)}
+.hero-media{opacity:.32}
+.hero i{width:120px;height:2px;background:linear-gradient(90deg,transparent,#fff,transparent);box-shadow:0 0 10px #fff,0 0 22px rgba(150,190,255,.9)}
+.sec:after{width:80px;height:2px;background:linear-gradient(90deg,transparent,#fff,transparent);box-shadow:0 0 10px #fff,0 0 22px rgba(150,190,255,.9)}
 
-/* ===== ALFA · Letras plateadas neón ===== */
-:root{--ink:#EAF1FA;--mut:#A9B8CA;--silver:#E6EDF7}
-.logo,.hero h1,footer .logo{background:none;-webkit-background-clip:border-box;background-clip:border-box;color:var(--silver)}
-.logo,.hero h1,.sec,.trust b,.card h3,h2{text-shadow:0 0 2px #fff,0 0 8px rgba(190,215,255,.9),0 0 20px rgba(120,170,255,.6),0 0 40px rgba(90,140,255,.35)}
-.hero p,.pr,.cats button.on,.cats button:hover,.ib,footer a:hover{color:var(--silver);text-shadow:0 0 6px rgba(190,215,255,.85),0 0 16px rgba(120,170,255,.5)}
+/* Texto con brillo neón */
+.logo,.hero h1,footer .logo,.sec,.trust b,.card h3,h2{background:none;-webkit-background-clip:border-box;background-clip:border-box;color:var(--silver)!important;text-shadow:var(--glow)}
+.hero p,.pr,.ib,.cats button.on,.cats button:hover,footer a:hover{color:var(--silver);text-shadow:0 0 6px rgba(215,230,255,.9),0 0 18px rgba(140,185,255,.6)}
+.cats button{color:var(--mut)}
 .trust b,[style*="color:var(--gold)"]:not(.stars):not(.tag){color:var(--silver)!important}
-.card:hover h3{color:#fff}
+.card:hover h3{color:#fff!important;text-shadow:0 0 4px #fff,0 0 14px #cfe0ff,0 0 34px #7fa8ff}
+.cats button::after{box-shadow:0 0 8px rgba(215,230,255,.95)}
 
-/* ===== ALFA · Neón plateado total ===== */
-.btn,.hero .btn{box-shadow:0 0 6px rgba(190,215,255,.6),0 0 18px rgba(120,170,255,.35)}
-.btn:hover{box-shadow:0 0 10px #fff,0 0 28px rgba(150,190,255,.8)}
-.btn.o{box-shadow:none;border-color:#3b4a60}
-.hero .btn{border-color:var(--gold);color:var(--silver)}
-.hero .btn:hover{background:var(--gold);color:#000}
-.hero i,.sec:after{box-shadow:0 0 8px rgba(190,215,255,.9)}
-.dove,.wa,.bank,.pay .on{border-color:var(--gold);box-shadow:0 0 8px rgba(190,215,255,.55),0 0 22px rgba(120,170,255,.25)}
-.wa{background:linear-gradient(135deg,#7C8BA3,#CFDAEA,#fff);color:#000}
-.tag,.tabs .on{background:var(--gold);color:#000;box-shadow:0 0 10px rgba(190,215,255,.7)}
-.cats button.on{border-color:var(--gold)}
-.cats button::after{box-shadow:0 0 6px rgba(190,215,255,.9)}
-header,footer{border-color:#2f3b4d;box-shadow:0 1px 14px -6px rgba(150,190,255,.45)}
-input:focus,select:focus,textarea:focus{border-color:var(--gold);box-shadow:0 0 10px rgba(150,190,255,.5)}
-.card:hover .ph{border-color:var(--gold);box-shadow:0 0 18px rgba(150,190,255,.55),0 28px 42px -24px rgba(150,190,255,.5)}
-.toast{background:var(--gold);box-shadow:0 0 18px rgba(190,215,255,.7)}
+/* Líneas y bordes encendidos */
+header,footer,.cats,.trust{border-color:#3a4a66;box-shadow:0 1px 16px -6px rgba(170,205,255,.6)}
+.ph,.md,.dr,.bank,.q,.com{border-color:#44567a}
+.card:hover .ph{border-color:#fff;box-shadow:var(--glowbox),0 28px 46px -24px rgba(150,190,255,.7)}
+
+/* Botones plateados brillantes */
+.btn,.hero .btn{background:linear-gradient(135deg,#aebbd3,#ffffff 50%,#c9d8f0);color:#000;border-color:#fff;box-shadow:var(--glowbox)}
+.btn:hover{background:#fff;border-color:#fff;box-shadow:0 0 12px #fff,0 0 34px rgba(150,195,255,.95)}
+.btn.o{background:transparent;color:var(--silver);border-color:#6a7fa6;box-shadow:none}
+.btn.o:hover{border-color:#fff;box-shadow:var(--glowbox);background:rgba(200,220,255,.08)}
+.hero .btn{background:transparent;color:var(--silver)}
+.hero .btn:hover{background:#fff;color:#000}
+
+/* Elementos flotantes y formularios */
+.wa{background:linear-gradient(135deg,#aebbd3,#fff,#c9d8f0);color:#000;border:1px solid #fff;box-shadow:var(--glowbox);animation:none}
+.dove{background:#000;border-color:#fff;box-shadow:var(--glowbox)}
+.tag,.tabs .on,.toast{background:#fff;color:#000;box-shadow:0 0 12px #fff,0 0 28px rgba(150,190,255,.8)}
+.pay .on{border-color:#fff;color:#fff;box-shadow:var(--glowbox)}
+input,select,textarea{background:#000;border-color:#3a4a66}
+input:focus,select:focus,textarea:focus{border-color:#fff;box-shadow:0 0 12px rgba(190,215,255,.8)}
+.stars .on{color:#fff;text-shadow:0 0 10px rgba(190,215,255,.95)}
 </style>
 </head>
 <body>

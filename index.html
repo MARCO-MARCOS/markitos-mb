@@ -389,7 +389,7 @@ async function migrate(){let n=0;
       await setDoc(doc(db,'images',p.id),{d:fu});await updateDoc(doc(db,'products',p.id),{img:th,hf:true});n++;toast('Optimizando fotos… '+n)}
     catch(x){toast('No se pudo guardar. Revisa las reglas de Firebase (colección images).');return}}
   toast(n?'Listo: '+n+' fotos optimizadas':'No hay fotos pendientes')}
-let sq='',st,SR={q:'',ids:[],busy:false};
+let sq='',st,migDone=false,SR={q:'',ids:[],busy:false};
 const norm=t=>String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
 const kws=p=>{const o=new Set();norm([p.n,p.m,p.c].join(' ')).split(' ').forEach(w=>{if(w.length===1)o.add(w);for(let i=2;i<=Math.min(w.length,20);i++)o.add(w.slice(0,i))});return [...o].slice(0,250)};
 const hay=p=>norm([p.n,p.m,p.c].join(' '));
@@ -400,13 +400,14 @@ async function doSearch(q){
   if(nq.length<2){SR={q:'',ids:[],busy:false};soft();return}
   const ws=nq.split(' ').filter(Boolean);
   if(!LIVE){SR={q:nq,ids:D.products.filter(p=>ws.every(w=>hay(p).includes(w))).map(p=>p.id),busy:false};soft();return}
-  SR={q:nq,ids:[],busy:true};soft();
+  const loc=()=>Object.values(PM).filter(p=>ws.every(w=>hay(p).includes(w))).map(p=>p.id);
+  SR={q:nq,ids:loc().sort().reverse(),busy:true};soft();
   try{
     const t=ws.reduce((a,b)=>b.length>a.length?b:a,'').slice(0,20);
     const r=await getDocs(query(collection(db,'products'),where('k','array-contains',t),limit(30)));
     if(SR.q!==nq)return;
     r.docs.forEach(d=>{PM[d.id]={id:d.id,...d.data()}});
-    SR.ids=r.docs.map(d=>d.id).filter(id=>ws.every(w=>hay(PM[id]).includes(w))).sort().reverse();
+    SR.ids=[...new Set([...loc(),...r.docs.map(d=>d.id).filter(id=>ws.every(w=>hay(PM[id]).includes(w)))])].sort().reverse();
   }catch(e){if(SR.q===nq)toast('No se pudo buscar')}
   if(SR.q===nq){SR.busy=false;soft()}
 }
@@ -537,6 +538,7 @@ if(LIVE){
     /* Solo el correo del administrador puede mantener sesión */
     if(u&&!ADMIN_EMAILS.map(x=>x.toLowerCase()).includes((u.email||'').toLowerCase())){signOut(au);toast('Acceso no autorizado');return}
     user=u;armIdle();un.forEach(f=>f());un=[];
+    if(u&&!migDone)setTimeout(()=>{if(!migDone&&Object.values(PM).some(p=>!Array.isArray(p.k))){migDone=true;migrateSearch()}},3000);
     if(u){un.push(onSnapshot(query(collection(db,'orders'),orderBy('at','desc'),limit(50)),s=>{orders=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>b.at-a.at);soft()},()=>{}),onSnapshot(query(collection(db,'comments'),orderBy('t','desc'),limit(100)),s=>{allComs=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>b.t-a.t);soft()},()=>{}))}
     soft()});
 }

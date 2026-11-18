@@ -378,9 +378,18 @@ function shareNota(){
   if(navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({files:[file],title:'Nota de pedido ALFA'}).catch(()=>{})}
   else{const u=URL.createObjectURL(notaBlob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);toast('Nota guardada como imagen')}
 }
-let AC=null;
+let AC=null,alfaLock=0;
+/* El navegador solo permite audio tras un clic/toque/tecla: se desbloquea con la primera interacción */
+['pointerdown','keydown','touchstart'].forEach(ev=>addEventListener(ev,()=>{try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume()}catch(e){}},{passive:true}));
+/* Al pasar el cursor sobre ALFA (en pantallas con mouse) */
+document.addEventListener('pointerover',e=>{
+  if(e.pointerType&&e.pointerType!=='mouse')return;
+  const hh=e.target.closest&&e.target.closest('h1.gm');
+  if(hh&&!(e.relatedTarget&&hh.contains(e.relatedTarget)))playAlfa();
+});
 function playAlfa(){
   const h=$('.hero h1.gm');if(!h)return;
+  if(Date.now()<alfaLock)return;alfaLock=Date.now()+2200;
   let ac=null;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();ac=AC;if(ac.state==='suspended')ac.resume()}catch(e){}
   const t0=(ac?ac.currentTime:0)+.05;
   h.classList.remove('play');void h.offsetWidth;h.classList.add('play');

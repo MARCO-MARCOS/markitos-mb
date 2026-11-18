@@ -208,6 +208,25 @@ footer a .ic{width:1.7em;height:1.7em;margin-right:10px}
 .ic{transform-origin:50% 50%}
 @keyframes brinco{0%{transform:translateY(0) rotate(0)}35%{transform:translateY(-9px) rotate(180deg)}70%{transform:translateY(0) rotate(360deg)}85%{transform:translateY(-3px) rotate(360deg)}100%{transform:translateY(0) rotate(360deg)}}
 footer a:hover .ic,.wa:hover .ic,label:hover .ic{animation:brinco .75s cubic-bezier(.3,.7,.3,1)}
+
+/* ===== ALFA estilo videojuego ===== */
+.intro .hero-content>h1.gm{animation:hit .55s 1.5s backwards}
+.intro .gm span{display:inline-block;animation:slam .85s cubic-bezier(.2,.9,.25,1.15) backwards}
+.intro .gm span:nth-child(1){animation-delay:.2s}
+.intro .gm span:nth-child(2){animation-delay:.5s}
+.intro .gm span:nth-child(3){animation-delay:.8s}
+.intro .gm span:nth-child(4){animation-delay:1.1s}
+@keyframes slam{
+  0%{opacity:0;transform:scale(8);filter:blur(16px)}
+  55%{opacity:1;transform:scale(.86);filter:blur(0)}
+  75%{transform:scale(1.08)}
+  100%{transform:scale(1)}}
+@keyframes hit{
+  0%{filter:brightness(2.6);transform:translate(0)}
+  20%{transform:translate(-7px,3px)}
+  40%{transform:translate(6px,-4px)}
+  60%{transform:translate(-3px,2px)}
+  100%{filter:none;transform:none}}
 </style>
 </head>
 <body>
@@ -215,7 +234,7 @@ footer a:hover .ic,.wa:hover .ic,label:hover .ic{animation:brinco .75s cubic-bez
 <script type="application/json" id="data">{"cfg":{"wa":"","bank":"Tu banco","holder":"Nombre del titular","clabe":"000000000000000000","ig":"","fb":"","tt":"","mail":"","cats":["Ropa","Calzado","Perfumes","Belleza","Accesorios"],"heroMedia":"","ship":0,"shipFree":0,"codEstados":"","sname":"ALFA","saddr":""},"products":[]}</script>
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import{getFirestore,initializeFirestore,persistentLocalCache,persistentMultipleTabManager,getDoc,collection,doc,onSnapshot,query,where,addDoc,setDoc,updateDoc,deleteDoc,getDocs,orderBy,limit,startAfter,documentId}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import{getFirestore,initializeFirestore,persistentLocalCache,persistentMultipleTabManager,getDoc,collection,doc,onSnapshot,query,where,addDoc,setDoc,updateDoc,deleteDoc,getDocs,orderBy,limit,startAfter,documentId,runTransaction}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import{getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const firebaseConfig={apiKey:"AIzaSyBzlFbM2AtoBBqVTVTKyemVlDeY38ME870",authDomain:"markitos-mb.firebaseapp.com",projectId:"markitos-mb",storageBucket:"markitos-mb.firebasestorage.app",messagingSenderId:"829003658332",appId:"1:829003658332:web:0891af6a892a5fd7c22299"};
@@ -243,7 +262,7 @@ try{cart=JSON.parse(localStorage.getItem('alfa-cart')||'{}')}catch(e){}
 const PM={},PG={},PAGE=12;D.products.forEach(p=>PM[p.id]=p);
 let cartP={};try{cartP=JSON.parse(localStorage.getItem('alfa-cartp')||'{}')}catch(e){}
 const save=()=>{try{Object.keys(cartP).forEach(k=>{if(!cart[k])delete cartP[k]});localStorage.setItem('alfa-cart',JSON.stringify(cart));localStorage.setItem('alfa-cartp',JSON.stringify(cartP))}catch(e){}};
-const slim=p=>({id:p.id,n:p.n,p:p.p,c:p.c,so:p.so,mediaType:p.mediaType,img:p.mediaType==='video'?'':p.img});
+const slim=p=>({id:p.id,n:p.n,p:p.p,c:p.c,so:p.so,qty:p.qty,mediaType:p.mediaType,img:p.mediaType==='video'?'':p.img});
 const prod=id=>PM[id]||cartP[id];
 const items=()=>Object.keys(cart).map(id=>({p:prod(id),q:cart[id]})).filter(i=>i.p&&!i.p.so);
 const total=()=>items().reduce((s,i)=>s+i.p.p*i.q,0);
@@ -479,7 +498,7 @@ function renderStore(){
     ${c.heroMedia ? (isVideoHero ? `<video class="hero-media" src="${esc(c.heroMedia)}" autoplay loop muted playsinline></video>` : `<img class="hero-media" src="${esc(c.heroMedia)}">`) : '<div class="hero-media" style="background:radial-gradient(circle, #0f1724 0%, #000 80%)"></div>'}
     <div class="hero-content">
       <p style="margin:0 0 22px">Nueva colección</p>
-      <h1>ALFA</h1>
+      <h1 class="gm"><span>A</span><span>L</span><span>F</span><span>A</span></h1>
       <i></i>
       <p>Elegancia · Exclusividad · Estilo</p>
       <button class="btn" data-a="shop">Ver colección</button>
@@ -519,15 +538,22 @@ function modal(){
   }
   if(view&&view.startsWith('p:')){
     const p=prod(view.slice(2));
-    return `<div class="ov c" data-a="close"><div class="md" style="position:relative"><div class="ph" style="aspect-ratio:auto;min-height:350px">${renderMedia(FULL[p.id]||p.img, p.mediaType, false)}</div><div><button class="x" data-a="close">×</button><p style="color:var(--gold);font-size:11px;letter-spacing:.25em;text-transform:uppercase;margin:0">${esc(p.c)}${p.m?' · '+esc(p.m):''}</p><h2 style="font-size:36px;margin:8px 0">${esc(p.n)}</h2><p style="letter-spacing:.08em;color:var(--gold);font-size:18px">${money(p.p)}</p><p style="color:var(--mut);margin:20px 0">${esc(p.d)}</p>${p.so?'<button class="btn" disabled>Agotado</button>':`<button class="btn" data-a="add" data-v="${p.id}">Agregar a la bolsa</button>`}</div></div></div>`;
+    return `<div class="ov c" data-a="close"><div class="md" style="position:relative"><div class="ph" style="aspect-ratio:auto;min-height:350px">${renderMedia(FULL[p.id]||p.img, p.mediaType, false)}</div><div><button class="x" data-a="close">×</button><p style="color:var(--gold);font-size:11px;letter-spacing:.25em;text-transform:uppercase;margin:0">${esc(p.c)}${p.m?' · '+esc(p.m):''}</p><h2 style="font-size:36px;margin:8px 0">${esc(p.n)}</h2><p style="letter-spacing:.08em;color:var(--gold);font-size:18px">${money(p.p)}</p>${!p.so&&p.qty!=null&&p.qty<=5?`<p style="color:var(--mut);font-size:12px;letter-spacing:.15em;text-transform:uppercase;margin:-8px 0 0">Quedan ${p.qty} pieza${p.qty==1?'':'s'}</p>`:''}<p style="color:var(--mut);margin:20px 0">${esc(p.d)}</p>${p.so?'<button class="btn" disabled>Agotado</button>':`<button class="btn" data-a="add" data-v="${p.id}">Agregar a la bolsa</button>`}</div></div></div>`;
   }
   return '';
 }
 
+async function takeStock(its){
+  for(const i of its){try{await runTransaction(db,async t=>{
+    const r=doc(db,'products',i.p.id),s=await t.get(r);if(!s.exists())return;
+    const q=s.data().qty;if(q==null)return;const n=Math.max(0,q-i.q);
+    t.update(r,{qty:n,so:n<=0});PM[i.p.id]={...PM[i.p.id],qty:n,so:n<=0}})}catch(e){}}
+}
 async function confirmOrder(){
   const n=$('#f-n').value.trim(),t=$('#f-t').value.trim(),a=$('#f-a').value.trim(),o=$('#f-o').value.trim(),es=$('#f-e').value,cp=$('#f-c').value.trim();
   if(!n||!t||!a||!es||!/^\d{5}$/.test(cp)){toast('Completa nombre, teléfono, estado, código postal (5 dígitos) y dirección');return}
   const its=items();if(!its.length){toast('Tu bolsa está vacía');return}
+  const bad=its.find(i=>i.p.qty!=null&&i.q>i.p.qty);if(bad){toast('Solo quedan '+bad.p.qty+' de '+bad.p.n);return}
   if(!codOk(es))pay='transfer';
   const sh=shipCost(),list=its.map(i=>({q:i.q,n:i.p.n,t:i.p.p*i.q}));if(sh>0)list.push({q:1,n:'Envío a '+es,t:sh});
   const lines=list.map(i=>`• ${i.q} x ${i.n} — ${money(i.t)}`).join('\n');
@@ -538,6 +564,7 @@ async function confirmOrder(){
   try{fetch('/api/pedido',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:done}),keepalive:true}).catch(()=>{})}catch(e){}
   if(!openWA(done))toast('Presiona «Enviar pedido por WhatsApp» para mandar tu pedido');
   try{await FB.addOrder(order)}catch(e){}
+  await takeStock(its);
   cart={};save();view='done';render();
 }
 
@@ -566,8 +593,8 @@ function renderAdmin(){
   if(!user) return `<div class="adm" style="max-width:380px;padding-top:90px"><div class="logo" style="margin-bottom:30px">ALFA</div><label>Correo</label><input id="l-m" type="email" autocomplete="username"><label>Contraseña</label><input id="l-p" type="password" autocomplete="current-password"><button class="btn" data-a="login">Entrar</button><p style="text-align:center"><button class="ib" data-a="exit">← Volver a la tienda</button></p></div>`;
   const c=D.cfg;let b='';
   if(tab==='prods'){
-    if(edit){const p=edit;b=`<h2>${p.id?'Editar artículo':'Nuevo artículo'}</h2><label>Multimedia del producto (Video o Imagen)</label><div class="ph" style="max-width:180px;margin:6px 0">${renderMedia(p.img, p.mediaType, false)}</div><input type="file" id="f-img" accept="image/*,video/*"><label>Nombre</label><input id="e-n" value="${esc(p.n)}"><label>Marca (opcional)</label><input id="e-m" value="${esc(p.m||'')}"><label>Precio (MXN)</label><input id="e-p" type="number" min="0" value="${p.p}"><label>Categoría</label><select id="e-c">${c.cats.map(x=>`<option ${x===p.c?'selected':''}>${esc(x)}</option>`).join('')}</select><label>Descripción</label><textarea id="e-d" rows="4">${esc(p.d)}</textarea><label><input type="checkbox" id="e-s" style="width:auto;margin-right:8px" ${p.so?'checked':''}>Agotado</label><div style="display:flex;gap:10px;margin-top:14px"><button class="btn" data-a="psave">Guardar</button><button class="btn o" data-a="pcancel">Cancelar</button></div>`}
-    else b=`<button class="btn" style="max-width:240px;margin-bottom:20px" data-a="pnew">+ Agregar producto</button>`+curList('Todo').map(p=>`<div class="it"><div class="ph">${renderMedia(p.img, p.mediaType, false)}</div><div>${esc(p.n)}${p.so?' <small style="color:var(--gold)">(agotado)</small>':''}<div style="color:var(--mut);font-size:13px">${esc(p.c)} · ${money(p.p)}</div></div><div><button class="sm" data-a="pso" data-v="${p.id}">${p.so?'Disponible':'Agotar'}</button><button class="sm" data-a="pedit" data-v="${p.id}">Editar</button><button class="sm" data-a="pdel" data-v="${p.id}">Borrar</button></div></div>`).join('')+moreBtn('Todo')+(curList('Todo').length?'':`<p style="color:var(--mut)">${PG.Todo&&!PG.Todo.busy?'Aún no hay productos. Agrega el primero.':'Cargando productos…'}</p>`);
+    if(edit){const p=edit;b=`<h2>${p.id?'Editar artículo':'Nuevo artículo'}</h2><label>Multimedia del producto (Video o Imagen)</label><div class="ph" style="max-width:180px;margin:6px 0">${renderMedia(p.img, p.mediaType, false)}</div><input type="file" id="f-img" accept="image/*,video/*"><label>Nombre</label><input id="e-n" value="${esc(p.n)}"><label>Marca (opcional)</label><input id="e-m" value="${esc(p.m||'')}"><label>Precio (MXN)</label><input id="e-p" type="number" min="0" value="${p.p}"><label>Piezas en existencia (vacío = sin control)</label><input id="e-q" type="number" min="0" value="${p.qty==null?'':p.qty}"><label>Categoría</label><select id="e-c">${c.cats.map(x=>`<option ${x===p.c?'selected':''}>${esc(x)}</option>`).join('')}</select><label>Descripción</label><textarea id="e-d" rows="4">${esc(p.d)}</textarea><label><input type="checkbox" id="e-s" style="width:auto;margin-right:8px" ${p.so&&(p.qty==null||p.qty>0)?'checked':''}>Marcar agotado manualmente</label><div style="display:flex;gap:10px;margin-top:14px"><button class="btn" data-a="psave">Guardar</button><button class="btn o" data-a="pcancel">Cancelar</button></div>`}
+    else b=`<button class="btn" style="max-width:240px;margin-bottom:20px" data-a="pnew">+ Agregar producto</button>`+curList('Todo').map(p=>`<div class="it"><div class="ph">${renderMedia(p.img, p.mediaType, false)}</div><div>${esc(p.n)}${p.so?' <small style="color:var(--gold)">(agotado)</small>':''}<div style="color:var(--mut);font-size:13px">${esc(p.c)} · ${money(p.p)}${p.qty!=null?' · '+p.qty+' pzas':''}</div></div><div><button class="sm" data-a="pso" data-v="${p.id}">${p.so?'Disponible':'Agotar'}</button><button class="sm" data-a="pedit" data-v="${p.id}">Editar</button><button class="sm" data-a="pdel" data-v="${p.id}">Borrar</button></div></div>`).join('')+moreBtn('Todo')+(curList('Todo').length?'':`<p style="color:var(--mut)">${PG.Todo&&!PG.Todo.busy?'Aún no hay productos. Agrega el primero.':'Cargando productos…'}</p>`);
   }
   if(tab==='orders')b=orders.length?orders.map((o,ix)=>`<div class="bank"><small>${new Date(o.at).toLocaleString('es-MX')}</small><br><b>${esc(o.name)}</b> · ${esc(o.phone)}<br><small><b>Dirección:</b> ${esc(o.address)}</small><br>${esc(o.notes||'')}<div style="margin:8px 0;white-space:pre-line">${esc(o.items)}</div><b>${money(o.total)}</b> · ${o.pay==='transfer'?'Transferencia':'Pago al entregar'}<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="btn o" style="width:auto;padding:10px 16px" data-a="oprint" data-v="${ix}">Imprimir nota</button><button class="btn" style="width:auto;padding:10px 16px" data-a="olabel" data-v="${ix}">Imprimir etiqueta</button><button class="btn o" style="width:auto;padding:10px 16px;color:#e07b7b;border-color:#5a2e2e" data-a="odel" data-v="${o.id}">Eliminar</button></div></div>`).join(''):'<p style="color:var(--mut)">Aún no hay pedidos.</p>';
   if(tab==='coms')b=allComs.length?allComs.map(k=>`<div class="com"><div style="color:var(--gold)">${'★'.repeat(k.stars||5)} <small>${k.ok?'(publicada)':'(pendiente)'}</small></div><b>${esc(k.name)}</b><div>${esc(k.text)}</div><button class="sm" data-a="cok" data-v="${k.id}" style="margin:6px 6px 0 0">${k.ok?'Ocultar':'Aprobar'}</button><button class="sm" data-a="cdel" data-v="${k.id}">Borrar</button></div>`).join(''):'<p style="color:var(--mut)">Aún no hay opiniones.</p>';
@@ -607,8 +634,8 @@ document.addEventListener('click',async e=>{
     else if(a==='star'){star=+v;document.querySelectorAll('.stars button').forEach((b,i)=>b.className=i<star?'on':'');return}
     else if(a==='csend'){const n=$('#k-n').value.trim(),t=$('#k-t').value.trim();if(!n||!t){toast('Escribe tu nombre y comentario');return}
       await addDoc(collection(db,'comments'),{name:n.slice(0,40),text:t.slice(0,400),stars:star,ok:false,t:Date.now()});toast('¡Gracias! Tu opinión se publicará al ser revisada');view=null}
-    else if(a==='add'){cart[v]=(cart[v]||0)+1;if(PM[v])cartP[v]=slim(PM[v]);save();view='cart';toast('Agregado a la bolsa')}
-    else if(a==='inc'){cart[v]++;save()}
+    else if(a==='add'){const q0=(prod(v)||{}).qty;if(q0!=null&&(cart[v]||0)>=q0){toast('Solo hay '+q0+' en existencia');return}cart[v]=(cart[v]||0)+1;if(PM[v])cartP[v]=slim(PM[v]);save();view='cart';toast('Agregado a la bolsa')}
+    else if(a==='inc'){const q0=(prod(v)||{}).qty;if(q0!=null&&cart[v]>=q0){toast('Solo hay '+q0+' en existencia');return}cart[v]++;save()}
     else if(a==='dec'){cart[v]--;if(cart[v]<1)delete cart[v];save()}
     else if(a==='del'){delete cart[v];save()}
     else if(a==='checkout'){await refreshCart();view='checkout';shipState=''}
@@ -623,17 +650,17 @@ document.addEventListener('click',async e=>{
       return}
     else if(a==='logout'){await signOut(au)}
     else if(a==='tab'){tab=v;edit=null}
-    else if(a==='pnew')edit={id:'',n:'',m:'',p:0,c:D.cfg.cats[0],d:'',img:'',so:false,mediaType:'image'};
+    else if(a==='pnew')edit={id:'',n:'',m:'',p:0,qty:null,c:D.cfg.cats[0],d:'',img:'',so:false,mediaType:'image'};
     else if(a==='pedit')edit={...prod(v)};
     else if(a==='pcancel')edit=null;
     else if(a==='pso'){const p0=PM[v];await updateDoc(doc(db,'products',v),{so:!p0.so});p0.so=!p0.so;render();return}
     else if(a==='pdel'){if(confirm('¿Borrar este producto?')){await deleteDoc(doc(db,'products',v));deleteDoc(doc(db,'images',v)).catch(()=>{});Object.values(PG).forEach(g=>{g.ids=g.ids.filter(x=>x!==v)});delete PM[v];render()}return}
-    else if(a==='psave'){const p=edit;p.n=$('#e-n').value.trim();p.m=$('#e-m').value.trim();p.p=Number($('#e-p').value)||0;p.c=$('#e-c').value;p.d=$('#e-d').value;p.so=$('#e-s').checked;
+    else if(a==='psave'){const p=edit;p.n=$('#e-n').value.trim();p.m=$('#e-m').value.trim();p.p=Number($('#e-p').value)||0;p.c=$('#e-c').value;p.d=$('#e-d').value;const qv=$('#e-q').value.trim();p.qty=qv===''?null:Math.max(0,parseInt(qv)||0);p.so=$('#e-s').checked||(p.qty!==null&&p.qty<=0);
       if(!p.n){toast('Escribe el nombre');return}
       const id=p.id||('p'+Date.now());let hf=p.hf||false,img=p.img||'';
       if(p.full){try{await setDoc(doc(db,'images',id),{d:p.full});hf=true}catch(x){hf=false;img=p.full;toast('Guardado sin fotos separadas: actualiza las reglas de Firebase')}}
       if(p.mediaType==='video')hf=false;
-      const dat={n:p.n,m:p.m||'',k:kws(p),p:p.p,c:p.c,d:p.d,img,so:p.so,mediaType:p.mediaType||'image',hf,t:p.t||Date.now()};await setDoc(doc(db,'products',id),dat);PM[id]={id,...dat};delete FULL[id];resetPG();edit=null;toast('Guardado')}
+      const dat={n:p.n,m:p.m||'',k:kws(p),p:p.p,c:p.c,d:p.d,img,so:p.so,qty:p.qty==null?null:p.qty,mediaType:p.mediaType||'image',hf,t:p.t||Date.now()};await setDoc(doc(db,'products',id),dat);PM[id]={id,...dat};delete FULL[id];resetPG();edit=null;toast('Guardado')}
     else if(a==='migr'){await migrate();return}
     else if(a==='cok'){await updateDoc(doc(db,'comments',v),{ok:!allComs.find(k=>k.id===v).ok});return}
     else if(a==='cdel'){await deleteDoc(doc(db,'comments',v));return}
@@ -655,6 +682,7 @@ document.addEventListener('change',async e=>{
     if(pr){edit.img=pr.thumb;edit.full=pr.full}else{edit.img=await fileToBase64(f);edit.full=null}
     edit.mediaType=type;
     edit.n=$('#e-n').value;edit.m=$('#e-m').value;edit.p=Number($('#e-p').value)||0;edit.c=$('#e-c').value;edit.d=$('#e-d').value;edit.so=$('#e-s').checked;
+    {const qv=$('#e-q').value.trim();edit.qty=qv===''?null:parseInt(qv)||0}
     render();
   }
   if(e.target.id==='f-hero' && e.target.files[0]){

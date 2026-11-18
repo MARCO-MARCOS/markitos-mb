@@ -210,7 +210,14 @@ footer a .ic{width:1.7em;height:1.7em;margin-right:10px}
 footer a:hover .ic,.wa:hover .ic,label:hover .ic{animation:brinco .75s cubic-bezier(.3,.7,.3,1)}
 
 /* ===== ALFA estilo videojuego ===== */
-.intro .hero-content>h1.gm{animation:hit .55s 1.5s backwards}
+.hero h1.gm{cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+.intro .hero-content>h1.gm{animation:hit .55s 1.5s}
+.hero-content>h1.gm.play{animation:hit .55s 1.3s}
+.gm.play span{display:inline-block;animation:slam .85s cubic-bezier(.2,.9,.25,1.15) backwards}
+.gm.play span:nth-child(1){animation-delay:0s}
+.gm.play span:nth-child(2){animation-delay:.25s}
+.gm.play span:nth-child(3){animation-delay:.5s}
+.gm.play span:nth-child(4){animation-delay:.75s}
 .intro .gm span{display:inline-block;animation:slam .85s cubic-bezier(.2,.9,.25,1.15) backwards}
 .intro .gm span:nth-child(1){animation-delay:.2s}
 .intro .gm span:nth-child(2){animation-delay:.5s}
@@ -371,6 +378,28 @@ function shareNota(){
   if(navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({files:[file],title:'Nota de pedido ALFA'}).catch(()=>{})}
   else{const u=URL.createObjectURL(notaBlob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);toast('Nota guardada como imagen')}
 }
+let AC=null;
+function playAlfa(){
+  const h=$('.hero h1.gm');if(!h)return;
+  let ac=null;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();ac=AC;if(ac.state==='suspended')ac.resume()}catch(e){}
+  const t0=(ac?ac.currentTime:0)+.05;
+  h.classList.remove('play');void h.offsetWidth;h.classList.add('play');
+  if(!ac)return;
+  const out=ac.createGain();out.gain.value=.55;out.connect(ac.destination);
+  const nb=ac.createBuffer(1,ac.sampleRate*.6,ac.sampleRate),d=nb.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+  const noise=(st,dur,f0,f1,vol,type)=>{const s=ac.createBufferSource();s.buffer=nb;const f=ac.createBiquadFilter();f.type=type;f.frequency.setValueAtTime(f0,st);f.frequency.exponentialRampToValueAtTime(f1,st+dur);const g=ac.createGain();g.gain.setValueAtTime(.0001,st);g.gain.exponentialRampToValueAtTime(vol,st+dur*.85);g.gain.exponentialRampToValueAtTime(.0001,st+dur);s.connect(f);f.connect(g);g.connect(out);s.start(st);s.stop(st+dur+.02)};
+  const tone=(st,type,f0,f1,vol,len)=>{const o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.setValueAtTime(f0,st);o.frequency.exponentialRampToValueAtTime(f1,st+len);g.gain.setValueAtTime(vol,st);g.gain.exponentialRampToValueAtTime(.0001,st+len);o.connect(g);g.connect(out);o.start(st);o.stop(st+len+.02)};
+  /* Cada letra: "whoosh" al acercarse + golpe grave cuando se estrella (a los .47s de su animación) */
+  [0,.25,.5,.75].forEach((dl,i)=>{const hit=t0+dl+.47;
+    noise(hit-.45,.45,300,3500,.3,'bandpass');
+    tone(hit,'sine',150-i*8,38,.9,.35);
+    noise(hit,.09,2500,500,.35,'highpass')});
+  /* Remate: destello brillante + golpe final cuando el título tiembla (a los 1.3s) */
+  const fin=t0+1.3;
+  tone(fin,'sine',95,30,1,.9);
+  noise(fin,.5,6000,800,.3,'highpass');
+  [1318,1760,2637].forEach((f,i)=>tone(fin+i*.04,'triangle',f,f*.98,.12,1.2));
+}
 function toast(t){const e=document.createElement('div');e.className='toast';e.textContent=t;document.body.appendChild(e);setTimeout(()=>e.remove(),2600)}
 
 function renderMedia(src, type, autoplay=true){
@@ -498,7 +527,7 @@ function renderStore(){
     ${c.heroMedia ? (isVideoHero ? `<video class="hero-media" src="${esc(c.heroMedia)}" autoplay loop muted playsinline></video>` : `<img class="hero-media" src="${esc(c.heroMedia)}">`) : '<div class="hero-media" style="background:radial-gradient(circle, #0f1724 0%, #000 80%)"></div>'}
     <div class="hero-content">
       <p style="margin:0 0 22px">Nueva colección</p>
-      <h1 class="gm"><span>A</span><span>L</span><span>F</span><span>A</span></h1>
+      <h1 class="gm" data-a="alfa"><span>A</span><span>L</span><span>F</span><span>A</span></h1>
       <i></i>
       <p>Elegancia · Exclusividad · Estilo</p>
       <button class="btn" data-a="shop">Ver colección</button>
@@ -614,7 +643,8 @@ document.addEventListener('click',async e=>{
   if(el.classList.contains('ov')&&e.target!==el)return;
   const a=el.dataset.a,v=el.dataset.v;
   try{
-    if(a==='wa'){e.preventDefault();openWA();return}
+    if(a==='alfa'){playAlfa();return}
+    else if(a==='wa'){e.preventDefault();openWA();return}
     else if(a==='sendwa'){openWA(done);return}
     else if(a==='sharenota'){shareNota();return}
     else if(a==='printnota'){printNota(lastOrder);return}

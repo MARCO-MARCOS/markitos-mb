@@ -446,7 +446,14 @@ async function loadMore(k=cat){
     s.docs.forEach(d=>{PM[d.id]={id:d.id,...d.data()};if(!g.ids.includes(d.id))g.ids.push(d.id)});
     if(s.docs.length)g.last=s.docs[s.docs.length-1];
     if(s.docs.length<PAGE)g.done=true;
-  }catch(e){g.done=true;toast('No se pudieron cargar los productos')}
+  }catch(e){
+    console.error(e);
+    try{
+      const s2=await getDocs(query(collection(db,'products'),...(k!=='Todo'?[where('c','==',k)]:[]),limit(50)));
+      s2.docs.forEach(d=>{PM[d.id]={id:d.id,...d.data()};if(!g.ids.includes(d.id))g.ids.push(d.id)});
+      g.ids.sort().reverse();g.done=true;
+    }catch(e2){console.error(e2);g.done=true;toast('Error: '+(e2.code||e2.message))}
+  }
   g.busy=false;soft();
 }
 function resetPG(){Object.keys(PG).forEach(k=>delete PG[k]);loadMore('Todo');if(cat!=='Todo')loadMore(cat)}
@@ -549,7 +556,7 @@ if(LIVE){
   onAuthStateChanged(au,u=>{
     /* Solo los correos de los administradores pueden mantener sesión */
     if(u&&!ADMIN_EMAILS.map(x=>x.toLowerCase()).includes((u.email||'').toLowerCase())){signOut(au);toast('Acceso no autorizado');return}
-    user=u;armIdle();un.forEach(f=>f());un=[];
+    user=u;armIdle();un.forEach(f=>f());un=[];if(u)resetPG();
     if(u&&!migDone)setTimeout(()=>{if(!migDone&&Object.values(PM).some(p=>!Array.isArray(p.k))){migDone=true;migrateSearch()}},3000);
     if(u){un.push(onSnapshot(query(collection(db,'orders'),orderBy('at','desc'),limit(50)),s=>{orders=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>b.at-a.at);soft()},()=>{}),onSnapshot(query(collection(db,'comments'),orderBy('t','desc'),limit(100)),s=>{allComs=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>b.t-a.t);soft()},()=>{}))}
     soft()});
